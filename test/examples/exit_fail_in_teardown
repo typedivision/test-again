@@ -1,0 +1,23 @@
+#!/bin/sh
+#
+# FAIL
+#   in setup
+#   in test
+#   in teardown
+#
+. test/helper
+
+setup () {
+  printf "in setup\n"
+}
+
+teardown () {
+  printf "in teardown\n"
+  exit 1
+}
+
+test_exit_fail_in_teardown () {
+  printf "in test\n"
+}
+
+. ts

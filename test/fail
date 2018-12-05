@@ -1,0 +1,8 @@
+#!/bin/sh
+
+test_fail () {
+false
+}
+
+. test/helper
+. ts

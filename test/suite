@@ -1,0 +1,880 @@
+#!/bin/sh
+############################################################################
+. test/helper
+
+setup () {
+unset $(set | grep '^TS_' | sed -e 's/=.*//' | tr "\n" " ")
+export TS_TMP_DIR="$ts_test_dir"
+}
+
+# special case adjustments
+###########################################################################
+# BusyBox diff only outputs unified diffs so these tests cannot pass.
+# * https://busybox.net/downloads/BusyBox.html
+if ! (diff test/pass test/fail 2>&1 | grep -q '^---$')
+then
+skip_if_non_compliant_diff () {
+  skip "diff does not conform to POSIX definition"
+}
+else
+skip_if_non_compliant_diff () {
+  : # noop
+}
+fi
+###########################################################################
+
+assert_example () {
+skip_if_non_compliant_diff
+example_file="$1"
+options="${2:-}"
+
+ts -s $options "$example_file" |
+normalize_stream |
+assert_output "$(
+sed -ne '
+/^# PASS/,/^[^#]/s/# //p
+/^# FAIL/,/^[^#]/s/# //p
+/^# SKIP/,/^[^#]/s/# //p
+' "$example_file" | 
+normalize_stream
+)
+"
+}
+
+normalize_stream () {
+sed -e '
+/^P/s/.*/PASS/
+/^F/s/.*/FAIL/
+/^S/s/.*/SKIP/
+/^$/d
+' 
+}
+
+#
+# ts test
+#
+
+test_ts_runs_file () {
+ts -s test/pass | assert_output "\
+P [test/pass:3] test_pass
+
+"
+}
+
+test_ts_runs_file_in_pwd () {
+mkdir -p "$ts_test_dir"
+sed -e '/helper/d' test/pass > "$ts_test_dir/pass"
+chmod +x "$ts_test_dir/pass"
+cd "$ts_test_dir"
+
+ts -s pass | assert_output "\
+P [./pass:3] test_pass
+
+"
+}
+
+test_ts_runs_multiple_files () {
+ts -s test/pass test/fail | assert_output "\
+P [test/pass:3] test_pass
+
+F [test/fail:3] test_fail
+
+"
+}
+
+test_ts_runs_tests_with_same_name_in_different_files () {
+ts test/examples/xyz_one test/examples/xyz_two -s | assert_output "\
+P [test/examples/xyz_one:3] test_xyz
+
+F [test/examples/xyz_two:3] test_xyz
+
+"
+}
+
+test_ts_reads_raw_input_for_dash () {
+( ts test/pass -ar
+  ts test/fail -ar
+) | ts - -s  | assert_output "\
+P [test/pass:3] test_pass
+
+F [test/fail:3] test_fail
+
+"
+}
+
+test_ts_allows_whitespace_between_raw_inputs () {
+printf "%s" "\
+[test/examples/abc:3] test_a
+P 1
+a  
+
+[test/examples/abc:9] test_b
+P 1
+b
+
+
+[test/examples/abc:15] test_c
+F 1
+c
+
+" | ts -s - | assert_output "\
+P [test/examples/abc:3] test_a
+  a
+
+P [test/examples/abc:9] test_b
+  b
+
+F [test/examples/abc:15] test_c
+  c
+
+"
+}
+
+test_ts_preserves_whitespace_identified_in_raw_inputs () {
+printf "%s" "\
+[test/examples/abc:3] test_a
+P 3
+ 	 
+
+" | ts -s - | assert_output "\
+P [test/examples/abc:3] test_a
+   	 
+
+"
+}
+
+test_ts_reports_non_executable_files () {
+ts -s test/nox | assert_output "\
+S [test/nox] not executable
+
+"
+}
+
+test_ts_reports_non_files () {
+ts -s test test/miss | assert_output "\
+S [test] not a file
+
+S [test/miss] not a file
+
+"
+}
+
+test_script_runs_tests () {
+./test/examples/abc -s | assert_output "\
+P [./test/examples/abc:3] test_a
+  aA
+
+P [./test/examples/abc:9] test_b
+  bB
+
+F [./test/examples/abc:15] test_c
+  cC
+
+S [./test/examples/abc:21] test_s
+  s
+
+"
+}
+
+test_script_runs_named_tests () {
+./test/examples/abc -s test_a test_c | assert_output "\
+P [./test/examples/abc:3] test_a
+  aA
+
+F [./test/examples/abc:15] test_c
+  cC
+
+"
+}
+
+test_script_runs_tests_matching_patterns () {
+./test/examples/abc -s 'test_[ac]' | assert_output "\
+P [./test/examples/abc:3] test_a
+  aA
+
+F [./test/examples/abc:15] test_c
+  cC
+
+"
+}
+
+#
+# options test
+#
+
+test_ts_accepts_options_anywhere () {
+ts test/pass -a test/fail -s 2>/dev/null |
+assert_output "\
+P [test/pass:3] test_pass
+
+F [test/fail:3] test_fail
+
+"
+}
+
+test_script_accepts_options_anywhere () {
+./test/examples/abc test_a -a test_c -s | assert_output "\
+P [./test/examples/abc:3] test_a
+  aA
+
+F [./test/examples/abc:15] test_c
+  cC
+
+"
+}
+
+#
+# -a option
+#
+
+test_ts_does_not_print_passing_tests_by_default () {
+ts test/examples/abc 2>&1 |
+sed -e '$ s/[-0-9]\{1,\} s$/# s/' |
+assert_output "\
+..F-
+
+[test/examples/abc:15] test_c
+  cC
+F
+
+[test/examples/abc:21] test_s
+  s
+S
+
+2 pass 1 fail 1 skip # s
+"
+}
+
+test_ts_a_option_prints_all_tests () {
+ts -a test/examples/abc 2>&1 |
+sed -e '$ s/[-0-9]\{1,\} s$/# s/' |
+assert_output "\
+..F-
+
+[test/examples/abc:3] test_a
+  aA
+P
+
+[test/examples/abc:9] test_b
+  bB
+P
+
+[test/examples/abc:15] test_c
+  cC
+F
+
+[test/examples/abc:21] test_s
+  s
+S
+
+2 pass 1 fail 1 skip # s
+"
+}
+
+test_script_does_not_print_passing_tests_by_default () {
+./test/examples/abc 2>&1 |
+sed -e '$ s/[-0-9]\{1,\} s$/# s/' |
+assert_output "\
+..F-
+
+[./test/examples/abc:15] test_c
+  cC
+F
+
+[./test/examples/abc:21] test_s
+  s
+S
+
+2 pass 1 fail 1 skip # s
+"
+}
+
+test_script_a_option_prints_all_tests () {
+./test/examples/abc -a 2>&1 |
+sed -e '$ s/[-0-9]\{1,\} s$/# s/' |
+assert_output "\
+..F-
+
+[./test/examples/abc:3] test_a
+  aA
+P
+
+[./test/examples/abc:9] test_b
+  bB
+P
+
+[./test/examples/abc:15] test_c
+  cC
+F
+
+[./test/examples/abc:21] test_s
+  s
+S
+
+2 pass 1 fail 1 skip # s
+"
+}
+
+#
+# -c option
+#
+
+test_ts_c_option_prints_green_red_color_output () {
+ts -sc test/examples/abc | assert_output "\
+[[32mtest/examples/abc:3[0m] test_a
+  aA
+
+[[32mtest/examples/abc:9[0m] test_b
+  bB
+
+[[1;31mtest/examples/abc:15[0m] test_c
+  cC
+
+[[1;33mtest/examples/abc:21[0m] test_s
+  s
+
+"
+}
+
+test_script_c_option_prints_color_output () {
+./test/examples/abc -s -c | assert_output "\
+[[32m./test/examples/abc:3[0m] test_a
+  aA
+
+[[32m./test/examples/abc:9[0m] test_b
+  bB
+
+[[1;31m./test/examples/abc:15[0m] test_c
+  cC
+
+[[1;33m./test/examples/abc:21[0m] test_s
+  s
+
+"
+}
+
+#
+# -d option
+#
+
+# bash does '+++'
+# dash does '+'
+# zsh adds trailing whitespace to ts_exitstatus
+normalize_debug_output () {
+sed -e '
+  s/+\{1,\}/+++/
+  s/ts_exitstatus=0 /ts_exitstatus=0/
+'
+}
+
+test_ts_d_option_turns_on_xtrace_and_verbose () {
+ts -ds test/pass | normalize_debug_output | assert_output "\
+P [test/pass:3] test_pass
+  +++ trap teardown EXIT
+  +++ setup
+  +++ true
+  +++ test_pass
+  +++ true
+  +++ ts_exitstatus=0
+  +++ trap - EXIT
+  +++ teardown
+  +++ true
+  +++ return 0
+
+"
+}
+
+test_script_d_option_turns_on_xtrace_and_verbose () {
+./test/pass -d -s | normalize_debug_output | assert_output "\
+P [./test/pass:3] test_pass
+  +++ trap teardown EXIT
+  +++ setup
+  +++ true
+  +++ test_pass
+  +++ true
+  +++ ts_exitstatus=0
+  +++ trap - EXIT
+  +++ teardown
+  +++ true
+  +++ return 0
+
+"
+}
+
+#
+# -e
+#
+
+test_script_e_option_executes_test_in_shell () {
+skip_if_non_compliant_diff
+./test/examples/fail test_assert_output_fail -e | assert_output "\
+[./test/examples/fail:34] test_assert_output_fail
+unequal output:
+1c1
+< hello world
+\ No newline at end of file
+---
+> hell0 world
+\ No newline at end of file
+"
+}
+
+test_script_e_option_exits_with_test_exit_status () {
+./test/examples/fail test_exit_fail -e
+assert_status 8 $?
+}
+
+#
+# -m option
+#
+
+test_ts_m_option_monitors_output () {
+ts -am test/examples/abc 2>&1 |
+sed -e '$ s/[-0-9]\{1,\} s$/# s/' |
+assert_output "\
+..F-
+
+[test/examples/abc:3] test_a
+  aA
+P
+
+[test/examples/abc:9] test_b
+  bB
+P
+
+[test/examples/abc:15] test_c
+  cC
+F
+
+[test/examples/abc:21] test_s
+  s
+S
+
+2 pass 1 fail 1 skip # s
+"
+}
+
+test_script_m_option_monitors_output () {
+./test/examples/abc -a -m 2>&1 |
+sed -e "s/[-0-9]\{1,\} s$/# s/" |
+assert_output "\
+..F-
+
+[./test/examples/abc:3] test_a
+  aA
+P
+
+[./test/examples/abc:9] test_b
+  bB
+P
+
+[./test/examples/abc:15] test_c
+  cC
+F
+
+[./test/examples/abc:21] test_s
+  s
+S
+
+2 pass 1 fail 1 skip # s
+"
+}
+
+#
+# -h option
+#
+
+test_ts_h_prints_help () {
+ts -h | grep -q "usage:"
+}
+
+test_script_h_prints_help () {
+./test/pass -h | grep -q "usage:"
+}
+
+#
+# -q option
+#
+
+test_ts_displays_stdout_and_stderr () {
+ts -s test/examples/abc | assert_output "\
+P [test/examples/abc:3] test_a
+  aA
+
+P [test/examples/abc:9] test_b
+  bB
+
+F [test/examples/abc:15] test_c
+  cC
+
+S [test/examples/abc:21] test_s
+  s
+
+"
+}
+
+test_ts_q_option_hide_stderr () {
+ts -s -q test/examples/abc | assert_output "\
+P [test/examples/abc:3] test_a
+  a
+
+P [test/examples/abc:9] test_b
+  b
+
+F [test/examples/abc:15] test_c
+  c
+
+S [test/examples/abc:21] test_s
+  s
+
+"
+}
+
+test_script_displays_stdout_and_stderr () {
+./test/examples/abc -s | assert_output "\
+P [./test/examples/abc:3] test_a
+  aA
+
+P [./test/examples/abc:9] test_b
+  bB
+
+F [./test/examples/abc:15] test_c
+  cC
+
+S [./test/examples/abc:21] test_s
+  s
+
+"
+}
+
+test_script_q_hides_stderr () {
+./test/examples/abc -s -q | assert_output "\
+P [./test/examples/abc:3] test_a
+  a
+
+P [./test/examples/abc:9] test_b
+  b
+
+F [./test/examples/abc:15] test_c
+  c
+
+S [./test/examples/abc:21] test_s
+  s
+
+"
+}
+
+#
+# -r option
+#
+
+test_ts_r_option_removes_tmp_dir () {
+tmpdir="$ts_test_dir/tmp"
+ts -r -t "$tmpdir" test/pass
+[ ! -e "$tmpdir" ]
+}
+
+test_script_r_option_removes_tmp_dir () {
+tmpdir="$ts_test_dir/tmp"
+./test/pass -r -t "$tmpdir"
+[ ! -e "$tmpdir" ]
+}
+
+#
+# -s option
+#
+
+test_ts_s_option_prints_structured_output () {
+ts -s test/examples/abc | assert_output "\
+P [test/examples/abc:3] test_a
+  aA
+
+P [test/examples/abc:9] test_b
+  bB
+
+F [test/examples/abc:15] test_c
+  cC
+
+S [test/examples/abc:21] test_s
+  s
+
+"
+}
+
+test_script_s_option_prints_structured_output () {
+./test/examples/abc -s | assert_output "\
+P [./test/examples/abc:3] test_a
+  aA
+
+P [./test/examples/abc:9] test_b
+  bB
+
+F [./test/examples/abc:15] test_c
+  cC
+
+S [./test/examples/abc:21] test_s
+  s
+
+"
+}
+
+#
+# -v option
+#
+
+test_ts_v_option_displays_stderr () {
+ts -sv test/examples/abc | assert_output "\
+P [test/examples/abc:3] test_a
+  aA
+
+P [test/examples/abc:9] test_b
+  bB
+
+F [test/examples/abc:15] test_c
+  cC
+
+S [test/examples/abc:21] test_s
+  s
+
+"
+}
+
+test_script_v_option_displays_stderr () {
+./test/examples/abc -s -v | assert_output "\
+P [./test/examples/abc:3] test_a
+  aA
+
+P [./test/examples/abc:9] test_b
+  bB
+
+F [./test/examples/abc:15] test_c
+  cC
+
+S [./test/examples/abc:21] test_s
+  s
+
+"
+}
+
+#
+# -w option
+#
+
+test_ts_w_option_prints_raw_output () {
+ts -w test/examples/abc | assert_output "\
+[test/examples/abc:3] test_a
+P 2
+aA
+[test/examples/abc:9] test_b
+P 2
+bB
+[test/examples/abc:15] test_c
+F 2
+cC
+[test/examples/abc:21] test_s
+S 1
+s
+"
+}
+
+test_script_w_option_prints_raw_output () {
+./test/examples/abc -w | assert_output "\
+[./test/examples/abc:3] test_a
+P 2
+aA
+[./test/examples/abc:9] test_b
+P 2
+bB
+[./test/examples/abc:15] test_c
+F 2
+cC
+[./test/examples/abc:21] test_s
+S 1
+s
+"
+}
+
+#
+# TS_DIFF test
+#
+
+test_ts_uses_TS_DIFF_to_diff_outputs () {
+skip_if_non_compliant_diff
+export TS_DIFF="diff -e"
+./test/examples/fail test_assert_output_fail | assert_output "\
+[./test/examples/fail:34] test_assert_output_fail
+  unequal output:
+  1c
+  hell0 world
+  .
+  diff: $ts_test_dir/fail/test_assert_output_fail.e.txt: No newline at end of file
+  
+  diff: $ts_test_dir/fail/test_assert_output_fail.a.txt: No newline at end of file
+F
+
+"
+}
+
+#
+# exit status test
+#
+
+test_ts_exits_0_for_passing_test () {
+ts test/pass
+assert_status 0 $?
+}
+
+test_ts_exits_1_for_failing_test () {
+ts test/fail >&2
+assert_status 1 $?
+}
+
+test_script_exits_0_for_passing_test () {
+./test/pass
+assert_status 0 $?
+}
+
+test_script_exits_1_for_failing_test () {
+./test/fail >&2
+assert_status 1 $?
+}
+
+#
+# testcases
+#
+
+test_ts_returns_to_TS_USR_DIR_for_each_test () {
+assert_example test/examples/change_dirs
+}
+
+test_ts_exit_fail_in_setup () {
+assert_example test/examples/exit_fail_in_setup
+}
+
+test_ts_exit_fail_in_test () {
+assert_example test/examples/exit_fail_in_test
+}
+
+test_ts_exit_fail_in_teardown () {
+assert_example test/examples/exit_fail_in_teardown
+}
+
+test_ts_exit_fail_after_untrap_EXIT () {
+assert_example test/examples/exit_fail_in_test_after_untrap
+}
+
+test_ts_fail_examples () {
+assert_example test/examples/fail
+}
+
+test_ts_options () {
+assert_example test/examples/options
+}
+
+# test this manually to see the nesting
+test_include () {
+ts -s test/examples/include | assert_output "\
+P [test/examples/include:3] test_include
+
+P [test/examples/include -> test/examples/include a:3] test_include_a
+
+P [test/examples/include -> test/examples/include b:3] test_include_b
+
+P [test/examples/include -> test/examples/include b -> test/examples/include_c:3] test_include_c
+
+"
+}
+
+test_ts_pass_examples () {
+assert_example test/examples/pass
+}
+
+test_ts_public_function_conflict () {
+assert_example test/examples/public_function_conflict
+}
+
+test_ts_return_fail_in_setup () {
+assert_example test/examples/return_fail_in_setup
+}
+
+test_ts_return_fail_in_teardown () {
+assert_example test/examples/return_fail_in_teardown
+}
+
+test_ts_test_detection () {
+assert_example test/examples/test_detection
+}
+
+test_undeclared_variable () {
+assert_example test/examples/undeclared_variable
+}
+
+#
+# misc tests
+#
+
+test_ts_prevents_hang_by_stdin () {
+# cat hangs if stdin is waiting
+cat | assert_output ""
+}
+
+test_ts_allows_exit_trap () {
+trap "exit 0" EXIT
+exit 1
+}
+
+#
+# skip test
+#
+
+test_ts_skip () {
+ts -s test/examples/skip | assert_output "\
+S [test/examples/skip:5] test_skip_no_reason
+  no reason given
+
+S [test/examples/skip:9] test_skip_with_reason
+  Skipping...
+
+"
+}
+
+#
+# readme test
+#
+
+test_ts_background_job_example () {
+# stderr message couldn't be generalized so use -q
+assert_example test/readme/background -q
+}
+
+test_ts_readme_example () {
+assert_example test/readme/example
+}
+
+test_ts_readme_common_tests () {
+cd test/readme
+ts -s test_grep_abc test_sed_abc | assert_output "\
+P [./test_grep_abc -> ./common_tests:1] test_it_should_pick_lines_with_abc
+
+P [./test_sed_abc -> ./common_tests:1] test_it_should_pick_lines_with_abc
+
+"
+}
+
+test_ts_readme_troubleshoot_fail () {
+assert_example test/readme/troubleshoot_fail
+}
+
+test_ts_readme_troubleshoot_pass () {
+assert_example test/readme/troubleshoot_pass
+}
+
+# test this one literally to ensure the example is 100% correct
+test_ts_readme_usage () {
+ts -s test/readme/usage | assert_output "\
+P [test/readme/usage:12] test_pass
+
+"
+}
+
+. ts

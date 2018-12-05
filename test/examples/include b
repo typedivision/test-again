@@ -1,0 +1,7 @@
+#!/bin/sh
+
+test_include_b () {
+true
+}
+
+. ts . test/examples/include_c

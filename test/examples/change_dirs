@@ -1,0 +1,15 @@
+#!/bin/sh
+. test/helper
+
+# PASS
+test_a () {
+cd "$TS_USR_DIR/bin"
+assert_output "$TS_USR_DIR/bin" "$(pwd)"
+}
+
+# PASS
+test_b () {
+assert_output "$TS_USR_DIR" "$(pwd)"
+}
+
+. ts
