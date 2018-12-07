@@ -1,15 +1,15 @@
 #!/bin/sh
-. test/helper
 
-# PASS
 test_a () {
-cd "$TS_USR_DIR/bin"
-assert_output "$TS_USR_DIR/bin" "$(pwd)"
+  cd "$TS_USR_DIR/bin"
+  expect_value '$TS_USR_DIR/bin' "$(pwd)"
 }
+#-> ok test_a
 
-# PASS
 test_b () {
-assert_output "$TS_USR_DIR" "$(pwd)"
+  expect_value "$TS_USR_DIR" "$(pwd)"
 }
+#-> ok test_b
 
+. test/helper
 . ts

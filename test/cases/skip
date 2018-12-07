@@ -1,13 +1,14 @@
 #!/bin/sh
 
-. test/helper
-
 test_skip_no_reason () {
   skip
 }
+#-> ok test_skip_no_reason # skip
 
 test_skip_with_reason () {
   skip "Skipping..."
 }
+#-> ok test_skip_with_reason # skip Skipping...
 
+. test/helper
 . ts

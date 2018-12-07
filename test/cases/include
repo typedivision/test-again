@@ -1,9 +1,0 @@
-#!/bin/sh
-. test/helper
-test_include () {
-true
-}
-
-. ts . "test/examples/include a"
-. ts . test/examples/include\ b
-. ts

@@ -1,18 +1,17 @@
 #!/bin/sh
-. test/helper
 
-# FAIL
-#   test/examples/undeclared_variable: line 8: var: unbound variable
 test_ts_fails_for_use_of_undeclared_variable () {
-unset var
-assert_output "" "$var"
+  unset var
+  expect_value '$var' ""
 }
+#-> not ok test_ts_fails_for_use_of_undeclared_variable
 
-# PASS
 test_ts_can_use_undeclared_variables_with_set_u () {
-set +u
-unset var
-assert_output "" "$var"
+  set +u
+  unset var
+  expect_value '$var' ""
 }
+#-> ok test_ts_can_use_undeclared_variables_with_set_u
 
+. test/helper
 . ts

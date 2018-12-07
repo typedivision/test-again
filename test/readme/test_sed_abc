@@ -1,4 +1,0 @@
-#!/bin/sh
-picker="sed -ne /abc/p"
-. ts . ./common_tests
-. ts

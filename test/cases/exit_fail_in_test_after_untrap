@@ -1,23 +1,19 @@
 #!/bin/sh
-#
-# FAIL
-#   in setup
-#   in test
-#
-. test/helper
 
 setup () {
-  printf "in setup\n"
+  echo "in setup"
 }
 
 teardown () {
-  printf "in teardown\n"
+  echo "in teardown"
 }
 
 test_exit_fail_in_test_after_untrap () {
-  printf "in test\n"
+  echo "in test"
   trap - EXIT
   exit 1
 }
+#-> not ok test_exit_fail_in_test_after_untrap
 
+. test/helper
 . ts

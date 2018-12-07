@@ -11,32 +11,36 @@ ts_usage () {
     ts_arg_expr="[TEST_NAMES...]"
   fi
   printf "\
-usage: ts [-dhkv] [-t TS_TMP_DIR] %s
+usage: ts [-dhiklv] [-t TS_TMP_DIR] %s
 
-  Tests shell scripts.
+  Run tests in shell scripts.
 
-    ts test/script*             # run multiple test scripts
-    ./test/script               # run a single test script
-    ./test/script test_a        # run a single test
+  ts test/script*          # run multiple test scripts
+  ./test/script            # run a single test script
+  ./test/script test_a     # run a single test
 
 options:
 
-    -d  debug output
-    -h  print this help
-    -k  keep tmp dir
-    -t  set the tmp dir (default tmp)
-    -v  verbose output
+  -d  debug output
+  -h  print this help
+  -i  interacive stops after each test
+  -k  keep tmp dir
+  -l  list tests
+  -t  set the tmp dir (default tmp)
+  -v  verbose output
 
 version: %s - %s
 " "$ts_arg_expr" "$ts_version" "$ts_url"
 }
 
-while getopts "dehkt:v" ts_option; do
+while getopts "dhiklt:v" ts_option; do
   case "$ts_option" in
     d) TS_DEBUG=1; TS_VERBOSE=1 ;;
     h) ts_usage
        exit 0 ;;
+    i) TS_INTERACTIVE=1 ;;
     k) TS_KEEP_TMP_DIR=1 ;;
+    l) TS_LIST=1 ;;
     t) TS_TMP_DIR=$OPTARG ;;
     v) TS_VERBOSE=1 ;;
     *) ts_usage | head -n 1
@@ -51,13 +55,13 @@ TS_TMP_DIR="${TS_TMP_DIR:-$TS_USR_DIR/tmp}"
 # private functions
 ###############################################################################
 
-# Prints all functions in a test file starting with 'test_' or $ts_test_pattern.
+# Prints all functions in a file starting with 'test_' or $ts_test_pattern.
 ts_list () {
   local ts_file="$1"
-  shift 1
+  shift
   local ts_test_pattern=$(printf "$*" | tr " " "|")
   grep -onE "^[[:space:]]*(${ts_test_pattern:-test_\w+})[[:space:]]*\(\)" /dev/null "$ts_file" |
-    sed -e 's/^\([^:]*\):\([0-9]\{1,\}\):[[:space:]]*\([^ (]\{1,\}\).*/\3 \1:\2/'
+  sed -e 's/^\([^:]*\):\([0-9]\{1,\}\):[[:space:]]*\([^ (]\{1,\}\).*/\3 \1:\2/'
 }
 
 # Runs a specific test.
@@ -66,6 +70,12 @@ ts_run_test () {
 
   # input /dev/null so that tests which read from stdin will not hang
   exec </dev/null
+  # use stdout for progress, stderr for debug information
+  if [ "$TS_VERBOSE" ]; then
+    exec 3>&1 1>/dev/null
+  else
+    exec 3>&1 2>/dev/null 1>/dev/null
+  fi
 
   if [ "$TS_DEBUG" ]; then
     set -ux
@@ -86,44 +96,54 @@ ts_run_test_suite () {
   ts_test_case="${ts_test_case%\.*}"
 
   local ts_case_dir="$TS_TMP_DIR/$ts_test_case"
-  if ! rm -rf "$ts_case_dir"; then
+  if ! [ "$TS_LIST" ] && ! rm -rf "$ts_case_dir"; then
     echo "error: could not clean existing test dir: $ts_case_dir"
     exit 1
   fi
 
+  local ts_test_cnt=0
   ts_list "$ts_test_file" "$@" |
   while read ts_test_name ts_test_desc; do
+    if [ "$TS_LIST" ]; then
+      echo "[$ts_test_desc] $ts_test_name"
+      continue
+    fi
 
     TS_TEST_DIR="$ts_case_dir/$ts_test_name"
     mkdir -p "$TS_TEST_DIR"
 
     # run the test by calling back into the test file
     # use a subprocess to prevent leakage (eg set -x)
-    # use stdout for progress, stderr for debug information
-    if [ "$TS_VERBOSE" ]; then
-      (ts_run_test $ts_test_name >/dev/null)
-    else
-      (ts_run_test $ts_test_name >/dev/null 2>&1)
-    fi
+    (ts_run_test $ts_test_name)
     # a zero exit status is considered a pass, otherwise fail
     if [ $? -eq 0 ]; then
       if [ -e "$TS_TEST_DIR"/skip ]; then
-        ts_status=S
+        local ts_reason="$(cat "$TS_TEST_DIR"/skip)"
+        if [ "$ts_reason" ]; then
+          ts_status="ok $ts_test_name # skip $ts_reason"
+        else
+          ts_status="ok $ts_test_name # skip"
+        fi
       else
-        ts_status=P
+        ts_status="ok $ts_test_name"
       fi
     else
-      ts_status=F
+      ts_status="not ok $ts_test_name"
       touch "$ts_case_dir"/fail
     fi
-    echo "$ts_status [$ts_test_desc] $ts_test_name"
+    echo "$ts_status"
+    ts_test_cnt=$((ts_test_cnt + 1))
+
+    if [ "$TS_INTERACTIVE" ]; then
+      read </dev/tty
+    fi
   done
 
   local ts_result=0
   if [ -e "$ts_case_dir"/fail ]; then
     ts_result=1
   fi
-  if ! [ "$TS_KEEP_TMP_DIR" ]; then
+  if ! [ "$TS_LIST" ] && ! [ "$TS_KEEP_TMP_DIR" ]; then
     rm -r "$ts_case_dir"
   fi
   return $ts_result
@@ -134,8 +154,11 @@ ts_run_test_files () {
   export TS_TMP_DIR
   export TS_KEEP_TMP_DIR
   export TS_DEBUG
+  export TS_INTERACTIVE
+  export TS_LIST
   export TS_VERBOSE
 
+  local ts_error
   for ts_test_file in "$@"; do
     if [ -f "$ts_test_file" ]; then
       if [ -x "$ts_test_file" ]; then
@@ -145,12 +168,19 @@ ts_run_test_files () {
           "$ts_test_file"
         fi
       else
-        echo "S [$ts_test_file] not executable"
+        echo "error: $ts_test_file not executable"
+        ts_error=1
+        continue
       fi
     else
-      echo "S [$ts_test_file] not a file"
+      echo "error: $ts_test_file not a file"
+      ts_error=1
+      continue
     fi
   done
+  if [ "$ts_error" ]; then
+    exit 1
+  fi
 }
 
 # public functions
@@ -164,41 +194,51 @@ if ! type "teardown" &>/dev/null; then
 teardown () { :; }
 fi
 
-# Flunks unless the numbers $1 (expected) and $2 (actual) are the same.
-assert_status () {
-  local ts_expected=$1
-  local ts_actual=$2
-  local ts_msg
-  if ! [ $ts_actual -eq $ts_expected ]; then
-    shift 2
-    if [ $# -ne 0 ]; then
-      ts_msg=" ($*)"
-    fi
-    echo "expected status $ts_expected but was $ts_actual$ts_msg" >&2
-    exit 1
-  fi
-}
-
-# Flunks unless the variables $1 (expected) and $2 (actual) are the same.
-# Reads from stdin for '-'.  '-' is assumed if $2 is not specified.
-assert_output () {
-  local ts_expected="$1"
-  local ts_actual="${2:--}"
-  if [ "$ts_expected" = - ]; then
-    ts_expected=$(cat)
-  fi
-  if [ "$ts_actual" = - ]; then
-    ts_actual=$(cat)
-  fi
-  if [ "$ts_actual" != "$ts_expected" ]; then
-    return 1
-  fi
-}
-
 skip () {
-  local ts_reason="$1"
+  local ts_reason="${1:-}"
   printf "$ts_reason\n" > "$TS_TEST_DIR"/skip
   exit 0
+}
+
+expect_status () {
+  eval "$1"
+  local actual=$?
+  local expect="${2:-0}"
+  if [ $actual = $expect ]; then
+    return
+  fi
+  echo >&3 "# expect_status failed: $1"
+  echo >&3 "#  actual   $actual"
+  echo >&3 "#  expected $expect"
+  exit 1
+}
+
+expect_output () {
+  local actual=$(eval "$1")
+  local expect="$2"
+  if [ "$actual" = "$expect" ]; then
+    return
+  fi
+  echo >&3 "# expect_output failed: $1"
+  echo >&3 "#  actual"
+  printf "$actual\n" | sed 's/^/#   /' | while read line; do echo >&3 "$line"; done
+  echo >&3 "#  expected"
+  printf "$expect\n" | sed 's/^/#   /' | while read line; do echo >&3 "$line"; done
+  exit 1
+}
+
+expect_value () {
+  eval local actual="$1"
+  local expect="$2"
+  if [ "$actual" = "$expect" ]; then
+    return
+  fi
+  echo >&3 "# expect_value failed: $1"
+  echo >&3 "#  actual"
+  printf "$actual\n" | sed 's/^/#   /' | while read line; do echo >&3 "$line"; done
+  echo >&3 "#  expected"
+  printf "$expect\n" | sed 's/^/#   /' | while read line; do echo >&3 "$line"; done
+  exit 1
 }
 
 # Run the given test files or this script as single suite.
