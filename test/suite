@@ -6,8 +6,9 @@
 #
 
 test_ts_runs_file () {
-  expect_output "test/cases/ok" \
-    "ok test_pass"
+  expect_output "test/cases/ok" "\
+1..1
+ok 1 test_pass"
 }
 
 test_ts_runs_file_in_pwd () {
@@ -16,20 +17,25 @@ test_ts_runs_file_in_pwd () {
   chmod +x "$TS_TEST_DIR/pass"
 
   cd "$TS_TEST_DIR"
-  expect_output "ts pass" \
-    "ok test_pass"
+  expect_output "ts pass" "\
+1..1
+ok 1 test_pass"
 }
 
 test_ts_runs_multiple_files () {
   expect_output "ts test/cases/ok test/cases/not_ok" "\
-ok test_pass
-not ok test_fail"
+1..1
+ok 1 test_pass
+1..1
+not ok 1 test_fail"
 }
 
 test_ts_runs_tests_with_same_name_in_different_files () {
   expect_output "ts test/cases/xyz_one test/cases/xyz_two" "\
-ok test_xyz
-not ok test_xyz"
+1..1
+ok 1 test_xyz
+1..1
+not ok 1 test_xyz"
 }
 
 test_ts_reports_non_executable_files () {
@@ -45,22 +51,25 @@ error: test/miss not a file"
 
 test_script_runs_tests () {
   expect_output "test/cases/abc" "\
-ok test_a
-ok test_b
-not ok test_c
-ok test_s # skip s"
+1..4
+ok 1 test_a
+ok 2 test_b
+not ok 3 test_c
+ok 4 test_s # skip s"
 }
 
 test_script_runs_named_tests () {
   expect_output "test/cases/abc test_a test_c" "\
-ok test_a
-not ok test_c"
+1..2
+ok 1 test_a
+not ok 2 test_c"
 }
 
 test_script_runs_tests_matching_patterns () {
   expect_output 'test/cases/abc "test_[ac]"' "\
-ok test_a
-not ok test_c"
+1..2
+ok 1 test_a
+not ok 2 test_c"
 }
 
 #

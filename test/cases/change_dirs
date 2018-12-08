@@ -4,12 +4,13 @@ test_a () {
   cd "$TS_USR_DIR/bin"
   expect_value '$TS_USR_DIR/bin' "$(pwd)"
 }
-#-> ok test_a
+#-> 1..2
+#-> ok 1 test_a
 
 test_b () {
   expect_value "$TS_USR_DIR" "$(pwd)"
 }
-#-> ok test_b
+#-> ok 2 test_b
 
 . test/helper
 . ts

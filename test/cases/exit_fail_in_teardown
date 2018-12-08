@@ -12,7 +12,8 @@ teardown () {
 test_exit_fail_in_teardown () {
   echo "in test"
 }
-#-> not ok test_exit_fail_in_teardown
+#-> 1..1
+#-> not ok 1 test_exit_fail_in_teardown
 
 . test/helper
 . ts

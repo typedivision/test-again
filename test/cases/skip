@@ -3,12 +3,13 @@
 test_skip_no_reason () {
   skip
 }
-#-> ok test_skip_no_reason # skip
+#-> 1..2
+#-> ok 1 test_skip_no_reason # skip
 
 test_skip_with_reason () {
   skip "Skipping..."
 }
-#-> ok test_skip_with_reason # skip Skipping...
+#-> ok 2 test_skip_with_reason # skip Skipping...
 
 . test/helper
 . ts

@@ -3,58 +3,59 @@
 test_exit_pass () {
   exit
 }
-#-> ok test_exit_pass
+#-> 1..10
+#-> ok 1 test_exit_pass
 
 test_return_pass () {
   true
 }
-#-> ok test_return_pass
+#-> ok 2 test_return_pass
 
 test_expect_status_true_pass () {
   expect_status true 0
 }
-#-> ok test_expect_status_true_pass
+#-> ok 3 test_expect_status_true_pass
 
 test_expect_status_false_pass () {
   expect_status false 1
 }
-#-> ok test_expect_status_false_pass
+#-> ok 4 test_expect_status_false_pass
 
 test_expect_output_pass () {
   expect_output 'echo "hello world"' "hello world"
 }
-#-> ok test_expect_output_pass
+#-> ok 5 test_expect_output_pass
 
 test_expect_output_multiline_pass () {
   expect_output 'for i in hello world; do echo $i; done' "\
 hello
 world"
 }
-#-> ok test_expect_output_multiline_pass
+#-> ok 6 test_expect_output_multiline_pass
 
 test_expect_value_pass () {
   expect_value 1 1
 }
-#-> ok test_expect_value_pass
+#-> ok 7 test_expect_value_pass
 
 test_expect_value_char_pass () {
   local a="x"
   expect_value '$a' x
 }
-#-> ok test_expect_value_char_pass
+#-> ok 8 test_expect_value_char_pass
 
 test_expect_value_number_pass () {
   local a=0
   expect_value '$a' 0
 }
-#-> ok test_expect_value_number_pass
+#-> ok 9 test_expect_value_number_pass
 
 test_multiple_expects_pass () {
   expect_status true 0
   expect_output "echo 0" "0"
   expect_value  0 0
 }
-#-> ok test_multiple_expects_pass
+#-> ok 10 test_multiple_expects_pass
 
 . test/helper
 . ts

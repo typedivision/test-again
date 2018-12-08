@@ -101,7 +101,11 @@ ts_run_test_suite () {
     exit 1
   fi
 
-  local ts_test_cnt=0
+  local ts_test_cnt=1
+  local ts_test_plan=$(ts_list "$ts_test_file" "$@" | wc -l | xargs)
+  if ! [ "$TS_LIST" ]; then
+    echo "$ts_test_cnt..$ts_test_plan"
+  fi
   ts_list "$ts_test_file" "$@" |
   while read ts_test_name ts_test_desc; do
     if [ "$TS_LIST" ]; then
@@ -120,15 +124,15 @@ ts_run_test_suite () {
       if [ -e "$TS_TEST_DIR"/skip ]; then
         local ts_reason="$(cat "$TS_TEST_DIR"/skip)"
         if [ "$ts_reason" ]; then
-          ts_status="ok $ts_test_name # skip $ts_reason"
+          ts_status="ok $ts_test_cnt $ts_test_name # skip $ts_reason"
         else
-          ts_status="ok $ts_test_name # skip"
+          ts_status="ok $ts_test_cnt $ts_test_name # skip"
         fi
       else
-        ts_status="ok $ts_test_name"
+        ts_status="ok $ts_test_cnt $ts_test_name"
       fi
     else
-      ts_status="not ok $ts_test_name"
+      ts_status="not ok $ts_test_cnt $ts_test_name"
       touch "$ts_case_dir"/fail
     fi
     echo "$ts_status"
@@ -144,7 +148,7 @@ ts_run_test_suite () {
     ts_result=1
   fi
   if ! [ "$TS_LIST" ] && ! [ "$TS_KEEP_TMP_DIR" ]; then
-    rm -r "$ts_case_dir"
+    rm -rf "$ts_case_dir"
   fi
   return $ts_result
 }
