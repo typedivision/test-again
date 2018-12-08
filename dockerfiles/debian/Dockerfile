@@ -1,3 +1,4 @@
 FROM debian:latest
-RUN ["apt-get", "update"]
-RUN ["apt-get", "install", "-y", "bash", "zsh", "ksh"]
+
+# shells for testing
+RUN apt-get update && apt-get install -y bash dash busybox

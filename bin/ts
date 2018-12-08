@@ -139,7 +139,7 @@ ts_run_test_suite () {
     ts_test_cnt=$((ts_test_cnt + 1))
 
     if [ "$TS_INTERACTIVE" ]; then
-      read </dev/tty
+      read x < /dev/tty
     fi
   done
 
@@ -190,11 +190,11 @@ ts_run_test_files () {
 # public functions
 ###############################################################################
 
-if ! type "setup" &>/dev/null; then
+if ! type "setup" >/dev/null 2>&1; then
 setup () { :; }
 fi
 
-if ! type "teardown" &>/dev/null; then
+if ! type "teardown" >/dev/null 2>&1; then
 teardown () { :; }
 fi
 
@@ -218,7 +218,7 @@ expect_status () {
 }
 
 expect_output () {
-  local actual=$(eval "$1")
+  local actual="$(eval "$1")"
   local expect="$2"
   if [ "$actual" = "$expect" ]; then
     return
