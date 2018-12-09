@@ -1,20 +1,20 @@
 #!/bin/sh
 
 test_a () {
-  printf "a"
-  printf "A" >&2
+  echo "a"
+  echo "A" >&2
   true
 }
 
 test_b () {
-  printf "b"
-  printf "B" >&2
+  echo "b"
+  echo "B" >&2
   true
 }
 
 test_c () {
-  printf "c"
-  printf "C" >&2
+  echo "c"
+  echo "C" >&2
   false
 }
 

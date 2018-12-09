@@ -14,7 +14,8 @@ test_return_fail () {
 test_expect_status_true_fail () {
   expect_status true 1
 }
-#-> # expect_status failed: true
+#-> # expect_status failed
+#-> #   true
 #-> #  actual   0
 #-> #  expected 1
 #-> not ok 3 test_expect_status_true_fail
@@ -22,7 +23,8 @@ test_expect_status_true_fail () {
 test_expect_status_false_fail () {
   expect_status false 0
 }
-#-> # expect_status failed: false
+#-> # expect_status failed
+#-> #   false
 #-> #  actual   1
 #-> #  expected 0
 #-> not ok 4 test_expect_status_false_fail
@@ -30,7 +32,8 @@ test_expect_status_false_fail () {
 test_expect_output_fail () {
   expect_output 'echo "hello world"' "hell0 world"
 }
-#-> # expect_output failed: echo "hello world"
+#-> # expect_output failed
+#-> #   echo "hello world"
 #-> #  actual
 #-> #   hello world
 #-> #  expected
@@ -42,7 +45,8 @@ test_expect_output_multiline_fail () {
 hell0
 world"
 }
-#-> # expect_output failed: for i in hello world; do echo $i; done
+#-> # expect_output failed
+#-> #   for i in hello world; do echo $i; done
 #-> #  actual
 #-> #   hello
 #-> #   world
@@ -54,7 +58,8 @@ world"
 test_expect_value_fail () {
   expect_value 1 2
 }
-#-> # expect_value failed: 1
+#-> # expect_value failed
+#-> #   1
 #-> #  actual
 #-> #   1
 #-> #  expected
@@ -65,7 +70,8 @@ test_expect_value_char_fail () {
   local a="x"
   expect_value '$a' X
 }
-#-> # expect_value failed: $a
+#-> # expect_value failed
+#-> #   $a
 #-> #  actual
 #-> #   x
 #-> #  expected
@@ -76,7 +82,8 @@ test_expect_value_number_fail () {
   local a=0
   expect_value '$a' 1
 }
-#-> # expect_value failed: $a
+#-> # expect_value failed
+#-> #   $a
 #-> #  actual
 #-> #   0
 #-> #  expected
@@ -87,7 +94,8 @@ test_multiple_expects_fail_early () {
   expect_status true 1
   expect_status true 0
 }
-#-> # expect_status failed: true
+#-> # expect_status failed
+#-> #   true
 #-> #  actual   0
 #-> #  expected 1
 #-> not ok 10 test_multiple_expects_fail_early
@@ -96,7 +104,8 @@ test_multiple_expects_fail_late () {
   expect_status true 0
   expect_status true 1
 }
-#-> # expect_status failed: true
+#-> # expect_status failed
+#-> #   true
 #-> #  actual   0
 #-> #  expected 1
 #-> not ok 11 test_multiple_expects_fail_late
