@@ -5,4 +5,4 @@ test_xyz () {
 }
 
 . test/helper
-. ts
+. tea.sh

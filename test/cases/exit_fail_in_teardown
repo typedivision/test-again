@@ -1,10 +1,10 @@
 #!/bin/sh
 
-setup () {
+t_setup () {
   echo "in setup"
 }
 
-teardown () {
+t_teardown () {
   echo "in teardown"
   exit 1
 }
@@ -16,4 +16,4 @@ test_exit_fail_in_teardown () {
 #-> not ok 1 test_exit_fail_in_teardown
 
 . test/helper
-. ts
+. tea.sh

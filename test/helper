@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ -e bin/ts ]
+if [ -e bin/tea.sh ]
 then
   export PATH="$PWD/bin:$PATH"
 else

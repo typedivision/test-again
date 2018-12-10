@@ -1,15 +1,15 @@
 #!/bin/sh
 
 test_skip_no_reason () {
-  skip
+  t_skip
 }
 #-> 1..2
 #-> ok 1 test_skip_no_reason # skip
 
 test_skip_with_reason () {
-  skip "Skipping..."
+  t_skip "Skipping..."
 }
 #-> ok 2 test_skip_with_reason # skip Skipping...
 
 . test/helper
-. ts
+. tea.sh

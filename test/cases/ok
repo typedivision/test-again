@@ -5,4 +5,4 @@ test_pass () {
 }
 
 . test/helper
-. ts
+. tea.sh

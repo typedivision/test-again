@@ -9,4 +9,4 @@ test_setup_and_teardown_commands_on_PATH_are_ignored () {
 #-> ok 1 test_setup_and_teardown_commands_on_PATH_are_ignored
 
 . test/helper
-. ts
+. tea.sh

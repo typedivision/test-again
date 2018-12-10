@@ -1,66 +1,66 @@
 #!/bin/sh
 
-TS_PROGNAME="${0##*/}"
+_t_SCRIPT="${0##*/}"
 
-ts_usage () {
-  if [ "$TS_PROGNAME" = ts ]; then
+_t_usage () {
+  if [ "$_t_SCRIPT" = tea.sh ]; then
     local args="[<test-file>...]"
     local examples="\
-  ts test_*     # run test functions of multiple test files
-  test_1        # run test functions of a single test file
-  test_1 fn_a   # run selected test function of the test file
+  tea.sh test_*   # run test functions of multiple test files
+  test_1          # run test functions of a single test file
+  test_1 fn_a     # run selected test function of the test file
 "
   else
     local args="[<test-function>...]"
     local examples="\
-  $TS_PROGNAME                 # run all test functions
-  $TS_PROGNAME <fn_a>          # run a single test function
-  $TS_PROGNAME <fn_a> <fn_b>   # run selected test functions
+  $_t_SCRIPT                 # run all test functions
+  $_t_SCRIPT <fn_a>          # run a single test function
+  $_t_SCRIPT <fn_a> <fn_b>   # run selected test functions
 "
   fi
   echo "\
 Run shell functions as tests.
-usage: $TS_PROGNAME [-h|-l|-dikqv] [-t <tmp-dir>] $args
+usage: $_t_SCRIPT [-h|-l|-dikqv] [-t <tmp-dir>] $args
 
 $examples
 options:
 
-  -d  debug output (print shell trace)
+  -d  debug output (print shell traces)
   -h  print this help
-  -i  interacive stops after tests
-  -k  keep tmp dir
-  -l  list tests
+  -i  interactive stops after tests
+  -k  keep (do not delete) the test dir
+  -l  list tests (don't run, just print)
   -q  quiet output (hide stderr)
-  -t  set the tmp dir (default ./tmp)
+  -t  set the tmp dir path (default ./tmp)
   -v  verbose output (print stdout)
 "
 }
 
 while getopts "dhiklqt:v" option; do
   case "$option" in
-    d) TS_DEBUG=1; TS_VERBOSE=1 ;;
-    h) ts_usage
+    d) _t_OPT_DEBUG=1; t_OPT_VERB=1 ;;
+    h) _t_usage
        exit 0 ;;
-    i) TS_INTERACTIVE=1 ;;
-    k) TS_KEEP_TMP_DIR=1 ;;
-    l) TS_LIST=1 ;;
-    q) TS_QUIET=1 ;;
-    t) TS_TMP_DIR=$OPTARG ;;
-    v) TS_VERBOSE=1 ;;
-    *) ts_usage | head -n 1
+    i) _t_OPT_INTERACT=1 ;;
+    k) _t_OPT_KEEP_TMP=1 ;;
+    l) _t_OPT_LIST=1 ;;
+    q) _t_OPT_QUIET=1 ;;
+    t) _t_OPT_TMP_DIR=$OPTARG ;;
+    v) _t_OPT_VERB=1 ;;
+    *) _t_usage | head -n 1
        exit 2 ;;
   esac
 done
 shift $((OPTIND - 1))
 
-TS_TOP_DIR="${TS_TOP_DIR:-$PWD}"
-TS_TMP_DIR="${TS_TMP_DIR:-$TS_TOP_DIR/tmp}"
+_t_TOP_DIR="$PWD"
+_t_TMP_DIR="${_t_OPT_TMP_DIR:-$_t_TOP_DIR/tmp}"
 
 # private functions
 ###############################################################################
 
 # Prints all functions in a file starting with 'test_' or $test_pattern.
-ts_list () {
+_t_list () {
   local file="$1"
   shift
   local test_pattern=$(printf "$*" | tr " " "|")
@@ -69,72 +69,72 @@ ts_list () {
 }
 
 # Runs a specific test.
-ts_run_test () {
-  local test_name="$1"
-
+_t_run_test () {
   # input /dev/null so that tests which read from stdin will not hang
   exec </dev/null
   # use fd3 for tap comments
-  if [ "$TS_VERBOSE" ]; then
+  if [ "$_t_OPT_VERB" ]; then
     exec 3>&1 1>&2
-  elif [ "$TS_QUIET" ]; then
+  elif [ "$_t_OPT_QUIET" ]; then
     exec 3>&1 1>/dev/null 2>&1
   else
     exec 3>&1 1>/dev/null
   fi
 
-  if [ "$TS_DEBUG" ]; then
+  if [ "$_t_OPT_DEBUG" ]; then
     set -ux
   else
     set -u
   fi
 
-  trap 'teardown' EXIT
-  setup && "$test_name"
+  trap 't_teardown' EXIT
+  t_setup && "$t_TEST_NAME"
   local exit_status=$?
   trap - EXIT
-  teardown && return $exit_status
+  t_teardown && return $exit_status
 }
 
-ts_run_test_functions () {
+_t_run_test_functions () {
   local test_file="$0"
   local test_case="${test_file##*/}"
   test_case="${test_case%\.*}"
 
-  local case_dir="$TS_TMP_DIR/$test_case"
-  if ! [ "$TS_LIST" ] && ! rm -rf "$case_dir"; then
+  local case_dir="$_t_TMP_DIR/$test_case"
+  if ! [ "$_t_OPT_LIST" ] && ! rm -rf "$case_dir"; then
     echo "error: could not clean existing test dir: $case_dir"
     exit 1
   fi
 
   local test_cnt=1
-  local test_plan=$(ts_list "$test_file" "$@" | wc -l | xargs)
-  if ! [ "$TS_LIST" ]; then
+  local test_plan=$(_t_list "$test_file" "$@" | wc -l | xargs)
+  if ! [ "$_t_OPT_LIST" ]; then
     echo "$test_cnt..$test_plan"
   fi
-  ts_list "$test_file" "$@" |
+  _t_list "$test_file" "$@" |
   while read test_name test_desc; do
-    if [ "$TS_LIST" ]; then
+    if [ "$_t_OPT_LIST" ]; then
       echo "[$test_desc] $test_name"
       continue
     fi
 
-    TS_TEST_DIR="$case_dir/$test_name"
-    mkdir -p "$TS_TEST_DIR"
+    export t_TEST_NAME=$test_name
+    export t_BASE_DIR="$_t_TOP_DIR"
+    export t_TEST_DIR="$case_dir/$test_name"
 
-    if [ "$TS_VERBOSE" ]; then
+    mkdir -p "$t_TEST_DIR"
+    if [ "$_t_OPT_VERB" ]; then
       >&2 echo "# $test_cnt $test_name [$test_desc]"
     fi
     # run the test by calling back into the test file
     # use a subprocess to prevent leakage (eg set -x)
     # a zero exit status is considered a pass, otherwise fail
     {
-      (ts_run_test $test_name) || touch "$TS_TEST_DIR"/fail
+      (_t_run_test) || touch "$t_TEST_DIR"/fail
     } 2>&1 | sed "s/^/# /" >&2
 
-    if ! [ -e "$TS_TEST_DIR"/fail ]; then
-      if [ -e "$TS_TEST_DIR"/skip ]; then
-        local reason="$(cat "$TS_TEST_DIR"/skip)"
+    if ! [ -e "$t_TEST_DIR"/fail ]; then
+      if [ -e "$t_TEST_DIR"/skip ]; then
+        local reason="$(cat "$t_TEST_DIR"/skip)"
         if [ "$reason" ]; then
           status="ok $test_cnt $test_name # skip $reason"
         else
@@ -150,7 +150,7 @@ ts_run_test_functions () {
     echo "$status"
     test_cnt=$((test_cnt + 1))
 
-    if [ "$TS_INTERACTIVE" ]; then
+    if [ "$_t_OPT_INTERACT" ]; then
       read x < /dev/tty
     fi
   done
@@ -159,21 +159,22 @@ ts_run_test_functions () {
   if [ -e "$case_dir"/fail ]; then
     result=1
   fi
-  if ! [ "$TS_LIST" ] && ! [ "$TS_KEEP_TMP_DIR" ]; then
+  if ! [ "$_t_OPT_LIST" ] && ! [ "$_t_OPT_KEEP_TMP" ]; then
     rm -rf "$case_dir"
   fi
   return $result
 }
 
-ts_run_test_files () {
-  export TS_TOP_DIR
-  export TS_TMP_DIR
-  export TS_DEBUG
-  export TS_INTERACTIVE
-  export TS_KEEP_TMP_DIR
-  export TS_LIST
-  export TS_QUIET
-  export TS_VERBOSE
+_t_run_test_files () {
+  export _t_TOP_DIR
+  export _t_TMP_DIR
+
+  export _t_OPT_DEBUG
+  export _t_OPT_INTERACT
+  export _t_OPT_KEEP_TMP
+  export _t_OPT_LIST
+  export _t_OPT_QUIET
+  export _t_OPT_VERB
 
   local error
   for test_file in "$@"; do
@@ -200,28 +201,28 @@ ts_run_test_files () {
   fi
 }
 
-ts_indent () {
+_t_indent () {
   echo "$1" | sed "s/^/  /"
 }
 
 # public functions
 ###############################################################################
 
-if ! type "setup" >/dev/null 2>&1; then
-setup () { :; }
+if ! type "t_setup" >/dev/null 2>&1; then
+t_setup () { :; }
 fi
 
-if ! type "teardown" >/dev/null 2>&1; then
-teardown () { :; }
+if ! type "t_teardown" >/dev/null 2>&1; then
+t_teardown () { :; }
 fi
 
-skip () {
+t_skip () {
   local reason="${1:-}"
-  printf "$reason\n" > "$TS_TEST_DIR"/skip
+  printf "$reason\n" > "$t_TEST_DIR"/skip
   exit 0
 }
 
-expect_status () {
+t_expect_status () {
   eval "$1"
   local actual=$?
   local expect="${2:-0}"
@@ -229,47 +230,47 @@ expect_status () {
     return
   fi
   >&3 echo "expect_status failed"
-  >&3 ts_indent "$1"
+  >&3 _t_indent "$1"
   >&3 echo " actual   $actual"
   >&3 echo " expected $expect"
   exit 1
 }
 
-expect_output () {
+t_expect_output () {
   local actual="$(eval "$1")"
   local expect="$2"
   if [ "$actual" = "$expect" ]; then
     return
   fi
   >&3 echo "expect_output failed"
-  >&3 ts_indent "$1"
+  >&3 _t_indent "$1"
   >&3 echo " actual"
-  >&3 ts_indent "$actual"
+  >&3 _t_indent "$actual"
   >&3 echo " expected"
-  >&3 ts_indent "$expect"
+  >&3 _t_indent "$expect"
   exit 1
 }
 
-expect_value () {
+t_expect_value () {
   eval local actual="$1"
   local expect="$2"
   if [ "$actual" = "$expect" ]; then
     return
   fi
   >&3 echo "expect_value failed"
-  >&3 ts_indent "$1"
+  >&3 _t_indent "$1"
   >&3 echo " actual"
-  >&3 ts_indent "$actual"
+  >&3 _t_indent "$actual"
   >&3 echo " expected"
-  >&3 ts_indent "$expect"
+  >&3 _t_indent "$expect"
   exit 1
 }
 
 # Run the given test files or this script as single suite.
 ###############################################################################
 
-if [ ts = "$TS_PROGNAME" ]; then
-  ts_run_test_files "$@"
+if [ "$_t_SCRIPT" = tea.sh ]; then
+  _t_run_test_files "$@"
 else
-  ts_run_test_functions "$@"
+  _t_run_test_functions "$@"
 fi

@@ -19,9 +19,9 @@ test_c () {
 }
 
 test_s () {
-  skip "s"
+  t_skip "s"
   false
 }
 
 . test/helper
-. ts
+. tea.sh

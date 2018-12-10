@@ -33,4 +33,4 @@ test_subshell_oneline () ( true )
 #-> ok 7 test_subshell_oneline
 
 . test/helper
-. ts
+. tea.sh

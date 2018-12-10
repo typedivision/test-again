@@ -1,16 +1,16 @@
 #!/bin/sh
 
 test_a () {
-  cd "$TS_TOP_DIR/bin"
-  expect_value '$TS_TOP_DIR/bin' "$(pwd)"
+  cd "$t_BASE_DIR/bin"
+  t_expect_value '$t_BASE_DIR/bin' "$(pwd)"
 }
 #-> 1..2
 #-> ok 1 test_a
 
 test_b () {
-  expect_value "$TS_TOP_DIR" "$(pwd)"
+  t_expect_value '$t_BASE_DIR' "$(pwd)"
 }
 #-> ok 2 test_b
 
 . test/helper
-. ts
+. tea.sh
