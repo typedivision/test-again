@@ -1,0 +1,19 @@
+#!/bin/sh
+
+t_setup () {
+  echo "in setup"
+}
+
+t_teardown () {
+  echo "in teardown"
+  false
+}
+
+test_return_fail_in_teardown () {
+  echo "in test"
+}
+#-> 1..1
+#-> not ok 1 test_return_fail_in_teardown
+
+. test/helper
+. tea.sh

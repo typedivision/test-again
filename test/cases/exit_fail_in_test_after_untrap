@@ -1,0 +1,20 @@
+#!/bin/sh
+
+t_setup () {
+  echo "in setup"
+}
+
+t_teardown () {
+  echo "in teardown"
+}
+
+test_exit_fail_in_test_after_untrap () {
+  echo "in test"
+  trap - EXIT
+  exit 1
+}
+#-> 1..1
+#-> not ok 1 test_exit_fail_in_test_after_untrap
+
+. test/helper
+. tea.sh

@@ -1,0 +1,8 @@
+#!/bin/sh
+
+test_not_run () {
+false
+}
+
+. test/helper
+. tea.sh

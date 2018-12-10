@@ -1,0 +1,306 @@
+#!/bin/sh
+. test/helper
+
+#
+# tea.sh test
+#
+
+test_tea_runs_file () {
+  t_expect_output "test/cases/ok" "\
+1..1
+ok 1 test_pass"
+}
+
+test_tea_runs_file_in_pwd () {
+  mkdir -p "$t_TEST_DIR"
+  sed -e '/helper/d' test/cases/ok > "$t_TEST_DIR/pass"
+  chmod +x "$t_TEST_DIR/pass"
+
+  cd "$t_TEST_DIR"
+  t_expect_output "tea.sh pass" "\
+1..1
+ok 1 test_pass"
+}
+
+test_tea_runs_multiple_files () {
+  t_expect_output "tea.sh test/cases/ok test/cases/not_ok" "\
+1..1
+ok 1 test_pass
+1..1
+not ok 1 test_fail"
+}
+
+test_tea_runs_tests_with_same_name_in_different_files () {
+  t_expect_output "tea.sh test/cases/xyz_one test/cases/xyz_two" "\
+1..1
+ok 1 test_xyz
+1..1
+not ok 1 test_xyz"
+}
+
+test_tea_reports_non_executable_files () {
+  t_expect_output "tea.sh test/cases/nox" \
+    "error: test/cases/nox not executable"
+}
+
+test_tea_reports_non_files () {
+ t_expect_output "tea.sh test test/miss" "\
+error: test not a file
+error: test/miss not a file"
+}
+
+test_file_runs_tests () {
+  t_expect_output "test/cases/abc -q" "\
+1..4
+ok 1 test_a
+ok 2 test_b
+not ok 3 test_c
+ok 4 test_s # skip s"
+}
+
+test_file_runs_named_tests () {
+  t_expect_output "test/cases/abc -q test_a test_c" "\
+1..2
+ok 1 test_a
+not ok 2 test_c"
+}
+
+test_file_runs_tests_matching_patterns () {
+  t_expect_output 'test/cases/abc -q "test_[ac]"' "\
+1..2
+ok 1 test_a
+not ok 2 test_c"
+}
+
+#
+# options test
+#
+
+test_tea_opt_h_prints_help () {
+  t_expect_status 'tea.sh -h | grep -q "usage:"' 0
+}
+
+test_file_opt_h_prints_help () {
+  t_expect_status 'test/cases/ok -h | grep -q "usage:"' 0
+}
+
+test_tea_opt_l_lists_tests () {
+  t_expect_output "tea.sh -l test/cases/abc" "\
+[test/cases/abc:3] test_a
+[test/cases/abc:9] test_b
+[test/cases/abc:15] test_c
+[test/cases/abc:21] test_s"
+}
+
+test_file_opt_l_lists_tests () {
+  t_expect_output "test/cases/abc -l" "\
+[test/cases/abc:3] test_a
+[test/cases/abc:9] test_b
+[test/cases/abc:15] test_c
+[test/cases/abc:21] test_s"
+}
+
+test_file_opt_default_prints_test_stderr () {
+  t_expect_output "test/cases/abc test_a 2>&1" "\
+1..1
+# A
+ok 1 test_a"
+}
+
+test_file_opt_q_prints_result_only () {
+  t_expect_output "test/cases/abc -q test_a 2>&1" "\
+1..1
+ok 1 test_a"
+}
+
+test_file_opt_v_prints_test_description_and_stdout () {
+  t_expect_output "test/cases/abc -v test_a 2>&1" "\
+1..1
+# 1 test_a [test/cases/abc:3]
+# a
+# A
+ok 1 test_a"
+}
+
+test_file_opt_v_prints_result_on_stdout () {
+  t_expect_output "test/cases/abc -v test_a 2>/dev/null" "\
+1..1
+ok 1 test_a"
+}
+
+test_file_opt_v_prints_comments_on_stderr () {
+  t_expect_output "test/cases/abc -v test_a 2>&1 1>/dev/null" "\
+# 1 test_a [test/cases/abc:3]
+# a
+# A"
+}
+
+test_file_opt_qv_is_the_same_as_v () {
+  t_expect_output "test/cases/abc -qv test_a 2>&1" "\
+1..1
+# 1 test_a [test/cases/abc:3]
+# a
+# A
+ok 1 test_a"
+}
+
+test_file_opt_d_prints_trace_logs () {
+  local loglines=$(test/cases/ok -d 2>&1 | wc -l)
+  t_expect_status "test $loglines -eq 12" 0
+}
+
+test_file_opt_dqv_is_the_same_as_d () {
+  local loglines=$(test/cases/ok -dqv 2>&1 | wc -l)
+  t_expect_status "test $loglines -eq 13" 0
+}
+
+test_file_opt_default_deletes_tmpdir () {
+  test/cases/ok
+  t_expect_status "test -e $_t_TMP_DIR/ok" 1
+}
+
+test_file_opt_k_keeps_tmpdir () {
+  test/cases/ok -k
+  t_expect_status "test -e $_t_TMP_DIR/ok" 0
+  rm -rf "$_t_TMP_DIR/ok"
+}
+
+test_file_opt_t_sets_tmpdir () {
+  test/cases/ok -k -t "$_t_TOP_DIR/temp"
+  t_expect_status "test -e $_t_TOP_DIR/temp/ok" 0
+  rm -rf "$_t_TOP_DIR/temp"
+}
+
+#
+# properties test
+#
+
+test_property_base_dir () {
+  t_expect_value '$t_BASE_DIR' "$_t_TOP_DIR"
+}
+
+test_property_test_dir () {
+  t_expect_value '$t_TEST_DIR' "$_t_TOP_DIR/tmp/suite/test_property_test_dir"
+}
+
+test_property_test_name () {
+  t_expect_value '$t_TEST_NAME' "test_property_test_name"
+}
+
+#
+# exit status test
+#
+
+test_tea_exits_0_for_passing_test () {
+  t_expect_status "tea.sh test/cases/ok" 0
+}
+
+test_tea_exits_1_for_failing_test () {
+  t_expect_status "tea.sh test/cases/ok" 0
+}
+
+test_file_exits_0_for_passing_test () {
+  t_expect_status "test/cases/ok" 0
+}
+
+test_file_exits_1_for_failing_test () {
+  t_expect_status "test/cases/not_ok" 1
+}
+
+test_tea_exits_1_for_non_executable_files () {
+  t_expect_status "tea.sh test/nox" 1
+}
+
+test_tea_exits_1_for_non_files () {
+  t_expect_status "tea.sh test test/miss" 1
+}
+
+#
+# testcases
+#
+
+case_output () {
+  sed -n 's/#-> *//p' $1
+}
+
+test_case_change_dirs () {
+  local test=test/cases/change_dirs
+  t_expect_output $test "$(case_output $test)"
+}
+
+test_case_exit_fail_in_setup () {
+  local test=test/cases/exit_fail_in_setup
+  t_expect_output $test "$(case_output $test)"
+}
+
+test_case_return_fail_in_setup () {
+  local test=test/cases/return_fail_in_setup
+  t_expect_output $test "$(case_output $test)"
+}
+
+test_case_exit_fail_in_test () {
+  local test=test/cases/exit_fail_in_test
+  t_expect_output $test "$(case_output $test)"
+}
+
+test_case_exit_fail_in_test_after_untrap () {
+  local test=test/cases/exit_fail_in_test_after_untrap
+  t_expect_output $test "$(case_output $test)"
+}
+
+test_case_exit_fail_in_teardown () {
+  local test=test/cases/exit_fail_in_teardown
+  t_expect_output $test "$(case_output $test)"
+}
+
+test_case_return_fail_in_teardown () {
+  local test=test/cases/return_fail_in_teardown
+  t_expect_output $test "$(case_output $test)"
+}
+
+test_case_fail () {
+  local test=test/cases/fail
+  t_expect_output "$test 2>&1" "$(case_output $test)"
+}
+
+test_case_pass () {
+  local test=test/cases/pass
+  t_expect_output $test "$(case_output $test)"
+}
+
+test_case_skip () {
+  local test=test/cases/skip
+  t_expect_output $test "$(case_output $test)"
+}
+
+test_case_test_detection () {
+  local test=test/cases/test_detection
+  t_expect_output $test "$(case_output $test)"
+}
+
+test_case_public_function_conflict () {
+  local test=test/cases/public_function_conflict
+  t_expect_output $test "$(case_output $test)"
+}
+
+test_case_undeclared_variable () {
+  local test=test/cases/undeclared_variable
+  t_expect_output "$test -q" "$(case_output $test)"
+}
+
+#
+# misc tests
+#
+
+test_tea_prevents_hang_by_stdin () {
+  # cat hangs if stdin is waiting
+  local from_stdin=$(cat)
+  t_expect_value '$from_stdin' ""
+}
+
+test_tea_allows_exit_trap () {
+  trap "exit 0" EXIT
+  exit 1
+}
+
+. bin/tea.sh

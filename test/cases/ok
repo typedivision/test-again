@@ -1,0 +1,8 @@
+#!/bin/sh
+
+test_pass () {
+  true
+}
+
+. test/helper
+. tea.sh

@@ -1,0 +1,16 @@
+#!/bin/sh
+
+test_a () {
+  cd "$t_BASE_DIR/bin"
+  t_expect_value '$t_BASE_DIR/bin' "$(pwd)"
+}
+#-> 1..2
+#-> ok 1 test_a
+
+test_b () {
+  t_expect_value '$t_BASE_DIR' "$(pwd)"
+}
+#-> ok 2 test_b
+
+. test/helper
+. tea.sh
