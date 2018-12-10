@@ -6,7 +6,7 @@ while read os shells; do
   outfile=tmp/distributions/$image.buildlog
 
   echo "make $image..."
-  if docker build -t $image dockerfiles/$os >$outfile 2>&1; then
+  if docker build -t $image test/dockerfiles/$os >$outfile 2>&1; then
     echo "success"
   else
     echo "fail"

@@ -98,6 +98,19 @@ t_TEST_DIR          # the temporary test dir crated as:
                     # <tmp-dir>/<test-file-name>/<test-name>
 ```
 
+## development
+
+Clone the repo and run the tests
+```
+test/suite
+```
+
+To run the tests for different distributions (alpine, debian) and specific shells
+(bash, dash, busybox as), start the [docker](https://www.docker.com/) test
+```
+test/distributions
+```
+
 ## authors
 
 the `tea.sh` script is based on the `ts` command
