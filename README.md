@@ -16,22 +16,23 @@ Test scripts have the form of this `example_test` file:
 ```
 #!/bin/sh                  # bash, dash or busybox ash
 
-LOG=/tmp                   # define variables like in any other shell script
+STORE=/tmp/results         # define variables like in any other shell script
 
 t_setup () {               # optional setup, the 't_' is for tea.sh functions
-  LOG+=/$t_TEST_NAME       # given test properties also have the prefix '$t_'
-}                          # properties are available within function bodies
+  mkdir -p $STORE          # if setup fails, the test will fail immediately
+}
 
-t_teardown () {            # optional teardown step
-  tar -cf $LOG.tar \
-    -C $t_TEST_DIR .
+t_teardown () {            # optional teardown step, is always executed
+  LOG=$STORE/$t_TEST_NAME  # given test properties also have the prefix '$t_'
+  cd $t_TEST_DIR           # properties are available within function bodies
+  tar -cf $LOG.tar .
 }
 
 test_true () {             # the test functions follow the pattern 'test_*'
   true                     # return 0 to pass, otherwise the test fails
 }
 
-test_status_of_prog () {   # every test runs t_setup, test, t_teardown
+test_status_of_prog () {   # every test runs as t_setup, test_*, t_teardown
   t_expect_status prog 0   # use t_expect_* for reasonable output on failures
   prog >"$t_TEST_DIR"/out  # temporary t_TEST_DIR for each test - see options
 }
@@ -87,10 +88,11 @@ options:
 t_setup             # test setup step
 t_teardown          # test teardown step
 t_skip [<reason>]   # skip the test with optional reason
+t_subtest <file>    # run script file as subtest
 
 t_expect_status <cmd> <status>   # compare <command> exit code with <status>
 t_expect_output <cmd> <output>   # compare <command> stdout with <output>
-t_expect_value  <exp> <value>    # compare <expression> and <value>
+t_expect_value '<exp>' <value>   # compare <expression> and <value>
 
 t_TEST_NAME         # the actual test name (= test function name)
 t_BASE_DIR          # the shell working dir when calling the test script

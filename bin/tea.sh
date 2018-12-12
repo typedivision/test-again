@@ -2,6 +2,7 @@
 
 _t_SCRIPT="${0##*/}"
 
+# Prints usage message.
 _t_usage () {
   if [ "$_t_SCRIPT" = tea.sh ]; then
     local args="[<test-file>...]"
@@ -38,7 +39,7 @@ options:
 
 while getopts "dhiklqt:v" option; do
   case "$option" in
-    d) _t_OPT_DEBUG=1; t_OPT_VERB=1 ;;
+    d) _t_OPT_DEBUG=1; _t_OPT_VERB=1 ;;
     h) _t_usage
        exit 0 ;;
     i) _t_OPT_INTERACT=1 ;;
@@ -54,10 +55,20 @@ done
 shift $((OPTIND - 1))
 
 _t_TOP_DIR="$PWD"
-_t_TMP_DIR="${_t_OPT_TMP_DIR:-$_t_TOP_DIR/tmp}"
 
+# export command options to test file and subtest runs
+export _t_TMP_DIR="${_t_OPT_TMP_DIR:-$_t_TOP_DIR/tmp}"
+export _t_OPT_DEBUG="${_t_OPT_DEBUG:-}"
+export _t_OPT_INTERACT="${_t_OPT_INTERACT:-}"
+export _t_OPT_KEEP_TMP="${_t_OPT_KEEP_TMP:-}"
+export _t_OPT_LIST="${_t_OPT_LIST:-}"
+export _t_OPT_QUIET="${_t_OPT_QUIET:-}"
+export _t_OPT_VERB="${_t_OPT_VERB:-}"
+export _t_SUB_INDENT="${_t_SUB_INDENT:-}"
+
+#
 # private functions
-###############################################################################
+#
 
 # Prints all functions in a file starting with 'test_' or $test_pattern.
 _t_list () {
@@ -70,21 +81,21 @@ _t_list () {
 
 # Runs a specific test.
 _t_run_test () {
-  # input /dev/null so that tests which read from stdin will not hang
-  exec </dev/null
-  # use fd3 for tap comments
-  if [ "$_t_OPT_VERB" ]; then
-    exec 3>&1 1>&2
-  elif [ "$_t_OPT_QUIET" ]; then
-    exec 3>&1 1>/dev/null 2>&1
+  if [ "$_t_OPT_DEBUG" ]; then
+    set -uex
   else
-    exec 3>&1 1>/dev/null
+    set -ue
   fi
 
-  if [ "$_t_OPT_DEBUG" ]; then
-    set -ux
+  # input /dev/null so that tests which read from stdin will not hang
+  exec </dev/null
+
+  if [ "$_t_OPT_VERB" ]; then
+    exec 1>&2
+  elif [ "$_t_OPT_QUIET" ]; then
+    exec 1>/dev/null 2>/dev/null
   else
-    set -u
+    exec 1>/dev/null
   fi
 
   trap 't_teardown' EXIT
@@ -94,6 +105,7 @@ _t_run_test () {
   t_teardown && return $exit_status
 }
 
+# Runs a test file or selected tests from it, when given as option.
 _t_run_test_functions () {
   local test_file="$0"
   local test_case="${test_file##*/}"
@@ -105,32 +117,36 @@ _t_run_test_functions () {
     exit 1
   fi
 
+  # use fd 3>1 for tap output
+  # fd 2 is stderr and stdout
+  exec 3>&1
+
   local test_cnt=1
   local test_plan=$(_t_list "$test_file" "$@" | wc -l | xargs)
   if ! [ "$_t_OPT_LIST" ]; then
-    echo "$test_cnt..$test_plan"
+    >&3 echo "$_t_SUB_INDENT$test_cnt..$test_plan"
   fi
   _t_list "$test_file" "$@" |
   while read test_name test_desc; do
     if [ "$_t_OPT_LIST" ]; then
-      echo "[$test_desc] $test_name"
+      >&3 echo "[$test_desc] $test_name"
       continue
     fi
 
     export t_TEST_NAME=$test_name
     export t_BASE_DIR="$_t_TOP_DIR"
     export t_TEST_DIR="$case_dir/$test_name"
-
-    mkdir -p "$t_TEST_DIR"
-    if [ "$_t_OPT_VERB" ]; then
-      >&2 echo "# $test_cnt $test_name [$test_desc]"
-    fi
-    # run the test by calling back into the test file
-    # use a subprocess to prevent leakage (eg set -x)
-    # a zero exit status is considered a pass, otherwise fail
     {
+      mkdir -p "$t_TEST_DIR"
+      if [ "$_t_OPT_VERB" ]; then
+        echo "$test_name [$test_desc]"
+      fi
+      # run the test by calling back into the test file
+      # use a subprocess to prevent leakage (eg set -x)
+      # a zero exit status is considered a pass, otherwise fail
       (_t_run_test) || touch "$t_TEST_DIR"/fail
-    } 2>&1 | sed "s/^/# /" >&2
+
+    } 2>&1 | sed "/^ *#/! s/^/$_t_SUB_INDENT# /" >&2
 
     if ! [ -e "$t_TEST_DIR"/fail ]; then
       if [ -e "$t_TEST_DIR"/skip ]; then
@@ -147,7 +163,7 @@ _t_run_test_functions () {
       status="not ok $test_cnt $test_name"
       touch "$case_dir"/fail
     fi
-    echo "$status"
+    >&3 echo "$_t_SUB_INDENT$status"
     test_cnt=$((test_cnt + 1))
 
     if [ "$_t_OPT_INTERACT" ]; then
@@ -165,17 +181,8 @@ _t_run_test_functions () {
   return $result
 }
 
+# Runs multipe test files given as 'tea.sh' arguments.
 _t_run_test_files () {
-  export _t_TOP_DIR
-  export _t_TMP_DIR
-
-  export _t_OPT_DEBUG
-  export _t_OPT_INTERACT
-  export _t_OPT_KEEP_TMP
-  export _t_OPT_LIST
-  export _t_OPT_QUIET
-  export _t_OPT_VERB
-
   local error
   for test_file in "$@"; do
     if [ -f "$test_file" ]; then
@@ -201,27 +208,39 @@ _t_run_test_files () {
   fi
 }
 
-_t_indent () {
-  echo "$1" | sed "s/^/  /"
-}
-
+#
 # public functions
-###############################################################################
+#
 
+# Optional test setup step.
 if ! type "t_setup" >/dev/null 2>&1; then
 t_setup () { :; }
 fi
 
+# Optional test teardown step.
 if ! type "t_teardown" >/dev/null 2>&1; then
 t_teardown () { :; }
 fi
 
+# Skip this test with optional reason.
 t_skip () {
   local reason="${1:-}"
   printf "$reason\n" > "$t_TEST_DIR"/skip
   exit 0
 }
 
+# Run a test file as subtest.
+t_subtest () {
+  _t_SUB_INDENT="    $_t_SUB_INDENT"
+  1>&3 $@
+}
+
+# Helper function for expect message indention for all lines.
+_inl () {
+  echo "$1" | sed "s/^/  /"
+}
+
+# Assert, if status (exit code) of command is not equal to the expected output.
 t_expect_status () {
   eval "$1"
   local actual=$?
@@ -229,45 +248,48 @@ t_expect_status () {
   if [ $actual = $expect ]; then
     return
   fi
-  >&3 echo "expect_status failed"
-  >&3 _t_indent "$1"
-  >&3 echo " actual   $actual"
-  >&3 echo " expected $expect"
+  >&2 echo "expect_status failed"
+  >&2 _inl "$1"
+  >&2 echo " actual   $actual"
+  >&2 echo " expected $expect"
   exit 1
 }
 
+# Assert, if std output of command is not equal to the expected output.
 t_expect_output () {
   local actual="$(eval "$1")"
   local expect="$2"
   if [ "$actual" = "$expect" ]; then
     return
   fi
-  >&3 echo "expect_output failed"
-  >&3 _t_indent "$1"
-  >&3 echo " actual"
-  >&3 _t_indent "$actual"
-  >&3 echo " expected"
-  >&3 _t_indent "$expect"
+  >&2 echo "expect_output failed"
+  >&2 _inl "$1"
+  >&2 echo " actual"
+  >&2 _inl "$actual"
+  >&2 echo " expected"
+  >&2 _inl "$expect"
   exit 1
 }
 
+# Assert, if value of expression is not equal to the expected value.
 t_expect_value () {
   eval local actual="$1"
   local expect="$2"
   if [ "$actual" = "$expect" ]; then
     return
   fi
-  >&3 echo "expect_value failed"
-  >&3 _t_indent "$1"
-  >&3 echo " actual"
-  >&3 _t_indent "$actual"
-  >&3 echo " expected"
-  >&3 _t_indent "$expect"
+  >&2 echo "expect_value failed"
+  >&2 _inl "$1"
+  >&2 echo " actual"
+  >&2 _inl "$actual"
+  >&2 echo " expected"
+  >&2 _inl "$expect"
   exit 1
 }
 
+#
 # Run the given test files or this script as single suite.
-###############################################################################
+#
 
 if [ "$_t_SCRIPT" = tea.sh ]; then
   _t_run_test_files "$@"

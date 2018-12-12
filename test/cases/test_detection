@@ -3,34 +3,34 @@
 test_common () {
   true
 }
-#-> 1..7
-#-> ok 1 test_common
+#) 1..7
+#) ok 1 test_common
 
 test_with_whitespace 	 () {
   true
 }
-#-> ok 2 test_with_whitespace
+#) ok 2 test_with_whitespace
 
 test_without_whitespace() {
   true
 }
-#-> ok 3 test_without_whitespace
+#) ok 3 test_without_whitespace
 
   test_leading_whitespace () {
   true
 }
-#-> ok 4 test_leading_whitespace
+#) ok 4 test_leading_whitespace
 
 test_oneline () { true; }
-#-> ok 5 test_oneline
+#) ok 5 test_oneline
 
 test_subshell () (
   true
 )
-#-> ok 6 test_subshell
+#) ok 6 test_subshell
 
 test_subshell_oneline () ( true )
-#-> ok 7 test_subshell_oneline
+#) ok 7 test_subshell_oneline
 
 . test/helper
 . tea.sh

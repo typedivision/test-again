@@ -116,7 +116,7 @@ ok 1 test_a"
 test_file_opt_v_prints_test_description_and_stdout () {
   t_expect_output "test/cases/abc -v test_a 2>&1" "\
 1..1
-# 1 test_a [test/cases/abc:3]
+# test_a [test/cases/abc:3]
 # a
 # A
 ok 1 test_a"
@@ -130,7 +130,7 @@ ok 1 test_a"
 
 test_file_opt_v_prints_comments_on_stderr () {
   t_expect_output "test/cases/abc -v test_a 2>&1 1>/dev/null" "\
-# 1 test_a [test/cases/abc:3]
+# test_a [test/cases/abc:3]
 # a
 # A"
 }
@@ -138,20 +138,20 @@ test_file_opt_v_prints_comments_on_stderr () {
 test_file_opt_qv_is_the_same_as_v () {
   t_expect_output "test/cases/abc -qv test_a 2>&1" "\
 1..1
-# 1 test_a [test/cases/abc:3]
+# test_a [test/cases/abc:3]
 # a
 # A
 ok 1 test_a"
 }
 
 test_file_opt_d_prints_trace_logs () {
-  local loglines=$(test/cases/ok -d 2>&1 | wc -l)
-  t_expect_status "test $loglines -eq 12" 0
+  local loglines=$(test/cases/ok -d 2>&1 | wc -l | xargs)
+  t_expect_status "test $loglines -eq 16" 0
 }
 
 test_file_opt_dqv_is_the_same_as_d () {
-  local loglines=$(test/cases/ok -dqv 2>&1 | wc -l)
-  t_expect_status "test $loglines -eq 13" 0
+  local loglines=$(test/cases/ok -dqv 2>&1 | wc -l | xargs)
+  t_expect_status "test $loglines -eq 16" 0
 }
 
 test_file_opt_default_deletes_tmpdir () {
@@ -220,7 +220,7 @@ test_tea_exits_1_for_non_files () {
 #
 
 case_output () {
-  sed -n 's/#-> *//p' $1
+  sed -n 's/#) //p' "$1"
 }
 
 test_case_change_dirs () {
@@ -271,6 +271,11 @@ test_case_pass () {
 test_case_skip () {
   local test=test/cases/skip
   t_expect_output $test "$(case_output $test)"
+}
+
+test_case_subtest () {
+  local test=test/cases/subtest
+  t_expect_output "$test 2>/dev/null" "$(case_output $test)"
 }
 
 test_case_test_detection () {

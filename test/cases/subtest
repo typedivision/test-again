@@ -1,0 +1,49 @@
+#!/bin/sh
+
+test_pass () {
+  true
+}
+#) 1..6
+#) ok 1 test_pass
+
+test_subtest_pass () {
+  t_subtest test/cases/ok
+}
+#)     1..1
+#)     ok 1 test_pass
+#) ok 2 test_subtest_pass
+
+test_subtest_fail () {
+  t_subtest test/cases/not_ok
+}
+#)     1..1
+#)     not ok 1 test_fail
+#) not ok 3 test_subtest_fail
+
+test_subtest_mixed_pass_fail () {
+  t_subtest test/cases/abc
+}
+#)     1..4
+#)     ok 1 test_a
+#)     ok 2 test_b
+#)     not ok 3 test_c
+#)     ok 4 test_s # skip s
+#) not ok 4 test_subtest_mixed_pass_fail
+
+test_subsubtest () {
+  t_subtest test/cases/subsubtest
+}
+#)     1..2
+#)         1..1
+#)         ok 1 test_pass
+#)     ok 1 test_pass
+#)     not ok 2 test_fail
+#) not ok 5 test_subsubtest
+
+test_subtest_pass_2 () {
+  true
+}
+#) ok 6 test_subtest_pass_2
+
+. test/helper
+. tea.sh

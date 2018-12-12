@@ -1,0 +1,12 @@
+#!/bin/sh
+
+test_pass () {
+  t_subtest test/cases/ok
+}
+
+test_fail () {
+  t_expect_status true 1
+}
+
+. test/helper
+. tea.sh

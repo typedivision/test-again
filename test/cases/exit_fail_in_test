@@ -12,8 +12,8 @@ test_exit_fail_in_test () {
   echo "in test"
   exit 1
 }
-#-> 1..1
-#-> not ok 1 test_exit_fail_in_test
+#) 1..1
+#) not ok 1 test_exit_fail_in_test
 
 . test/helper
 . tea.sh
