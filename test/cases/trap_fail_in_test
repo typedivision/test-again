@@ -6,14 +6,15 @@ t_setup () {
 
 t_teardown () {
   echo "in teardown"
-  false
 }
 
-test_return_fail_in_teardown () {
+test_trap_fail_in_test () {
   echo "in test"
+  false
+  return 0
 }
 #) 1..1
-#) not ok 1 test_return_fail_in_teardown
+#) not ok 1 test_trap_fail_in_test
 
 . test/helper
 . tea.sh

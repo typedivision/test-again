@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env sh
 . test/helper
 
 #
@@ -146,12 +146,12 @@ ok 1 test_a"
 
 test_file_opt_d_prints_trace_logs () {
   local loglines=$(test/cases/ok -d 2>&1 | wc -l | xargs)
-  t_expect_status "test $loglines -eq 16" 0
+  t_expect_status "test $loglines -eq 14" 0
 }
 
 test_file_opt_dqv_is_the_same_as_d () {
   local loglines=$(test/cases/ok -dqv 2>&1 | wc -l | xargs)
-  t_expect_status "test $loglines -eq 16" 0
+  t_expect_status "test $loglines -eq 14" 0
 }
 
 test_file_opt_default_deletes_tmpdir () {
@@ -238,8 +238,18 @@ test_case_return_fail_in_setup () {
   t_expect_output $test "$(case_output $test)"
 }
 
+test_case_trap_fail_in_setup () {
+  local test=test/cases/trap_fail_in_setup
+  t_expect_output $test "$(case_output $test)"
+}
+
 test_case_exit_fail_in_test () {
   local test=test/cases/exit_fail_in_test
+  t_expect_output $test "$(case_output $test)"
+}
+
+test_case_trap_fail_in_test () {
+  local test=test/cases/trap_fail_in_test
   t_expect_output $test "$(case_output $test)"
 }
 
@@ -255,6 +265,11 @@ test_case_exit_fail_in_teardown () {
 
 test_case_return_fail_in_teardown () {
   local test=test/cases/return_fail_in_teardown
+  t_expect_output $test "$(case_output $test)"
+}
+
+test_case_trap_fail_in_teardown () {
+  local test=test/cases/trap_fail_in_teardown
   t_expect_output $test "$(case_output $test)"
 }
 

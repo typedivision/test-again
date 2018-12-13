@@ -14,7 +14,7 @@ format using `tea.sh` as command.
 The `tea.sh` command runs script files defining the test cases.
 Test scripts have the form of this `example_test` file:
 ```
-#!/bin/sh                  # bash, dash or busybox ash
+#!/usr/bin/env sh          # bash, dash or busybox ash
 
 STORE=/tmp/results         # define variables like in any other shell script
 

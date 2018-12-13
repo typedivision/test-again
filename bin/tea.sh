@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env sh
 
 _t_SCRIPT="${0##*/}"
 
@@ -81,15 +81,6 @@ _t_list () {
 
 # Runs a specific test.
 _t_run_test () {
-  if [ "$_t_OPT_DEBUG" ]; then
-    set -uex
-  else
-    set -ue
-  fi
-
-  # input /dev/null so that tests which read from stdin will not hang
-  exec </dev/null
-
   if [ "$_t_OPT_VERB" ]; then
     exec 1>&2
   elif [ "$_t_OPT_QUIET" ]; then
@@ -97,12 +88,27 @@ _t_run_test () {
   else
     exec 1>/dev/null
   fi
+  # input /dev/null so that tests which read from stdin will not hang
+  exec </dev/null
 
-  trap 't_teardown' EXIT
-  t_setup && "$t_TEST_NAME"
+  trap 't_teardown; exit 1' EXIT
+  if [ "$_t_OPT_DEBUG" ]; then
+    set -eux
+  else
+    set -eu
+  fi
+
+  t_setup
   local exit_status=$?
+
+  if [ $exit_status -eq 0 ]; then
+    "$t_TEST_NAME"
+    exit_status=$?
+  fi
   trap - EXIT
-  t_teardown && return $exit_status
+
+  t_teardown
+  return $exit_status
 }
 
 # Runs a test file or selected tests from it, when given as option.
@@ -136,33 +142,34 @@ _t_run_test_functions () {
     export t_TEST_NAME=$test_name
     export t_BASE_DIR="$_t_TOP_DIR"
     export t_TEST_DIR="$case_dir/$test_name"
+
+    mkdir -p "$t_TEST_DIR"
     {
-      mkdir -p "$t_TEST_DIR"
       if [ "$_t_OPT_VERB" ]; then
         echo "$test_name [$test_desc]"
       fi
       # run the test by calling back into the test file
       # use a subprocess to prevent leakage (eg set -x)
       # a zero exit status is considered a pass, otherwise fail
-      (_t_run_test) || touch "$t_TEST_DIR"/fail
+      (_t_run_test)
+      [ $? -eq 0 ] || touch "$t_TEST_DIR"/fail
 
     } 2>&1 | sed "/^ *#/! s/^/$_t_SUB_INDENT# /" >&2
 
-    if ! [ -e "$t_TEST_DIR"/fail ]; then
-      if [ -e "$t_TEST_DIR"/skip ]; then
-        local reason="$(cat "$t_TEST_DIR"/skip)"
-        if [ "$reason" ]; then
-          status="ok $test_cnt $test_name # skip $reason"
-        else
-          status="ok $test_cnt $test_name # skip"
-        fi
+    if [ -e "$t_TEST_DIR"/skip ]; then
+      local reason="$(cat "$t_TEST_DIR"/skip)"
+      if [ "$reason" ]; then
+        status="ok $test_cnt $test_name # skip $reason"
       else
-        status="ok $test_cnt $test_name"
+        status="ok $test_cnt $test_name # skip"
       fi
-    else
+    elif [ -e "$t_TEST_DIR"/fail ]; then
       status="not ok $test_cnt $test_name"
       touch "$case_dir"/fail
+    else
+      status="ok $test_cnt $test_name"
     fi
+
     >&3 echo "$_t_SUB_INDENT$status"
     test_cnt=$((test_cnt + 1))
 
@@ -214,12 +221,12 @@ _t_run_test_files () {
 
 # Optional test setup step.
 if ! type "t_setup" >/dev/null 2>&1; then
-t_setup () { :; }
+t_setup () { return; }
 fi
 
 # Optional test teardown step.
 if ! type "t_teardown" >/dev/null 2>&1; then
-t_teardown () { :; }
+t_teardown () { return; }
 fi
 
 # Skip this test with optional reason.
@@ -242,9 +249,11 @@ _inl () {
 
 # Assert, if status (exit code) of command is not equal to the expected output.
 t_expect_status () {
+  set +e
   eval "$1"
   local actual=$?
   local expect="${2:-0}"
+  set -e
   if [ $actual = $expect ]; then
     return
   fi

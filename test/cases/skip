@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env sh
 
 test_skip_no_reason () {
   t_skip

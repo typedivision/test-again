@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env sh
 
 export PATH="$PWD/test/examples/public_function_conflict.d:$PATH"
 

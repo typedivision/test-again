@@ -1,13 +1,13 @@
-#!/bin/sh
+#!/usr/bin/env sh
 
-test_exit_pass () {
-  exit
+test_true_pass () {
+  true
 }
 #) 1..10
-#) ok 1 test_exit_pass
+#) ok 1 test_true_pass
 
 test_return_pass () {
-  true
+  return
 }
 #) ok 2 test_return_pass
 
