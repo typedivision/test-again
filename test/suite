@@ -288,6 +288,11 @@ test_case_skip () {
   t_expect_output $test "$(case_output $test)"
 }
 
+test_case_bailout () {
+  local test=test/cases/bailout
+  t_expect_output $test "$(case_output $test)"
+}
+
 test_case_subtest () {
   local test=test/cases/subtest
   t_expect_output "$test 2>/dev/null" "$(case_output $test)"

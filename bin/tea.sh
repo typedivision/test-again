@@ -156,13 +156,13 @@ _t_run_test_functions () {
 
     } 2>&1 | sed "/^ *#/! s/^/$_t_SUB_INDENT# /" >&2
 
-    if [ -e "$t_TEST_DIR"/skip ]; then
-      local reason="$(cat "$t_TEST_DIR"/skip)"
-      if [ "$reason" ]; then
-        status="ok $test_cnt $test_name # skip $reason"
-      else
-        status="ok $test_cnt $test_name # skip"
-      fi
+    if [ -e "$t_TEST_DIR"/bail ]; then
+      local reason="$(cat "$t_TEST_DIR"/bail | sed '/^./ s/^/ /')"
+      >&3 echo "bail out!$reason"
+      exit 1
+    elif [ -e "$t_TEST_DIR"/skip ]; then
+      local reason="$(cat "$t_TEST_DIR"/skip | sed '/^./ s/^/ /')"
+      status="ok $test_cnt $test_name # skip$reason"
     elif [ -e "$t_TEST_DIR"/fail ]; then
       status="not ok $test_cnt $test_name"
       touch "$case_dir"/fail
@@ -234,6 +234,13 @@ t_skip () {
   local reason="${1:-}"
   printf "$reason\n" > "$t_TEST_DIR"/skip
   exit 0
+}
+
+# Abort the test run with optional reason.
+t_bailout () {
+  local reason="${1:-}"
+  printf "$reason\n" > "$t_TEST_DIR"/bail
+  exit 1
 }
 
 # Run a test file as subtest.

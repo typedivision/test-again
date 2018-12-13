@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+
+test_bailout () {
+  t_bailout "tests aborted"
+}
+#) 1..2
+#) bail out! tests aborted
+
+test_after_bailout () {
+  return
+}
+
+. test/helper
+. tea.sh

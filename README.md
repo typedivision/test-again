@@ -85,19 +85,20 @@ options:
 ## tea.sh functions and properties
 
 ```
-t_setup             # test setup step
-t_teardown          # test teardown step
-t_skip [<reason>]   # skip the test with optional reason
-t_subtest <file>    # run script file as subtest
+t_setup                # test setup step
+t_teardown             # test teardown step
+t_skip [<reason>]      # skip the test with optional reason
+t_bailout [<reason>]   # abort the test execution
+t_subtest <file>       # run script file as subtest
 
 t_expect_status <cmd> <status>   # compare <command> exit code with <status>
 t_expect_output <cmd> <output>   # compare <command> stdout with <output>
 t_expect_value '<exp>' <value>   # compare <expression> and <value>
 
-t_TEST_NAME         # the actual test name (= test function name)
-t_BASE_DIR          # the shell working dir when calling the test script
-t_TEST_DIR          # the temporary test dir crated as:
-                    # <tmp-dir>/<test-file-name>/<test-name>
+t_TEST_NAME            # the actual test name (= test function name)
+t_BASE_DIR             # the shell working dir when calling the test script
+t_TEST_DIR             # the temporary test dir crated as:
+                       # <tmp-dir>/<test-file-name>/<test-name>
 ```
 
 ## development
