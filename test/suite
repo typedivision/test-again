@@ -66,7 +66,7 @@ not ok 2 test_c"
 }
 
 test_file_runs_tests_matching_patterns () {
-  t_expect_output 'test/cases/abc -q "test_[ac]"' "\
+  t_expect_output 'test/cases/abc -q test_[ac]' "\
 1..2
 ok 1 test_a
 not ok 2 test_c"
@@ -290,6 +290,11 @@ test_case_skip () {
 
 test_case_bailout () {
   local test=test/cases/bailout
+  t_expect_output $test "$(case_output $test)"
+}
+
+test_case_exec () {
+  local test=test/cases/exec
   t_expect_output $test "$(case_output $test)"
 }
 

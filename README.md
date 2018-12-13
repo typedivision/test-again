@@ -87,9 +87,13 @@ options:
 ```
 t_setup                # test setup step
 t_teardown             # test teardown step
+
 t_skip [<reason>]      # skip the test with optional reason
 t_bailout [<reason>]   # abort the test execution
 t_subtest <file>       # run script file as subtest
+
+t_exec <cmd>           # run <command> and set result as
+                       # t_STATUS and t_OUTPUT
 
 t_expect_status <cmd> <status>   # compare <command> exit code with <status>
 t_expect_output <cmd> <output>   # compare <command> stdout with <output>

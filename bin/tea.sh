@@ -20,7 +20,6 @@ _t_usage () {
 "
   fi
   echo "\
-Run shell functions as tests.
 usage: $_t_SCRIPT [-h|-l|-dikqv] [-t <tmp-dir>] $args
 
 $examples
@@ -37,10 +36,16 @@ options:
 "
 }
 
+# Prints help message.
+_t_help () {
+  echo "Run shell functions as tests."
+  _t_usage
+}
+
 while getopts "dhiklqt:v" option; do
   case "$option" in
     d) _t_OPT_DEBUG=1; _t_OPT_VERB=1 ;;
-    h) _t_usage
+    h) _t_help
        exit 0 ;;
     i) _t_OPT_INTERACT=1 ;;
     k) _t_OPT_KEEP_TMP=1 ;;
@@ -91,7 +96,7 @@ _t_run_test () {
   # input /dev/null so that tests which read from stdin will not hang
   exec </dev/null
 
-  trap 't_teardown; exit 1' EXIT
+  trap 't_teardown' EXIT
   if [ "$_t_OPT_DEBUG" ]; then
     set -eux
   else
@@ -142,6 +147,8 @@ _t_run_test_functions () {
     export t_TEST_NAME=$test_name
     export t_BASE_DIR="$_t_TOP_DIR"
     export t_TEST_DIR="$case_dir/$test_name"
+    export t_EXEC_STATUS=""
+    export t_EXEC_OUTPUT=""
 
     mkdir -p "$t_TEST_DIR"
     {
@@ -254,52 +261,67 @@ _inl () {
   echo "$1" | sed "s/^/  /"
 }
 
+t_exec () {
+  set +e
+  t_EXEC_OUTPUT="$(set -e; $1)"
+  t_EXEC_STATUS=$?
+  set -e
+}
+
 # Assert, if status (exit code) of command is not equal to the expected output.
 t_expect_status () {
   set +e
-  eval "$1"
+  (set -e; $1)
   local actual=$?
   local expect="${2:-0}"
   set -e
   if [ $actual = $expect ]; then
     return
   fi
+  set +x
   >&2 echo "expect_status failed"
   >&2 _inl "$1"
   >&2 echo " actual   $actual"
   >&2 echo " expected $expect"
+  [ "$_t_OPT_DEBUG" ] && set -x
   exit 1
 }
 
 # Assert, if std output of command is not equal to the expected output.
 t_expect_output () {
   local actual="$(eval "$1")"
-  local expect="$2"
+  local expect="${2:-}"
   if [ "$actual" = "$expect" ]; then
     return
   fi
+  set +x
   >&2 echo "expect_output failed"
   >&2 _inl "$1"
   >&2 echo " actual"
   >&2 _inl "$actual"
   >&2 echo " expected"
   >&2 _inl "$expect"
+  [ "$_t_OPT_DEBUG" ] && set -x
   exit 1
 }
 
 # Assert, if value of expression is not equal to the expected value.
 t_expect_value () {
-  eval local actual="$1"
-  local expect="$2"
+  eval "local actual=\"$1\""
+  local expect="${2:-}"
   if [ "$actual" = "$expect" ]; then
     return
   fi
+  set +x
   >&2 echo "expect_value failed"
   >&2 _inl "$1"
-  >&2 echo " actual"
-  >&2 _inl "$actual"
+  if ! [ "$1" = "$actual" ]; then
+    >&2 echo " actual"
+    >&2 _inl "$actual"
+  fi
   >&2 echo " expected"
   >&2 _inl "$expect"
+  [ "$_t_OPT_DEBUG" ] && set -x
   exit 1
 }
 

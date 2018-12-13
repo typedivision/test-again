@@ -60,8 +60,6 @@ test_expect_value_fail () {
 }
 #) # expect_value failed
 #) #   1
-#) #  actual
-#) #   1
 #) #  expected
 #) #   2
 #) not ok 7 test_expect_value_fail

@@ -1,0 +1,23 @@
+#!/usr/bin/env sh
+
+prog () {
+  echo "prog out"
+  return 2
+}
+
+test_exec () {
+  t_exec prog
+  t_expect_value $t_EXEC_STATUS 2
+  t_expect_value '$t_EXEC_OUTPUT' "prog out"
+}
+#) 1..2
+#) ok 1 test_exec
+
+test_exec_cleans_state () {
+  t_expect_value $t_EXEC_STATUS ""
+  t_expect_value '$t_EXEC_OUTPUT' ""
+}
+#) ok 2 test_exec_cleans_state
+
+. test/helper
+. tea.sh
