@@ -24,7 +24,7 @@ t_setup () {               # optional setup, the 't_' is for tea.sh functions
 
 t_teardown () {            # optional teardown step, is always executed
   LOG=$STORE/$t_TEST_NAME  # given test properties also have the prefix '$t_'
-  cd $t_TEST_DIR           # properties are available within function bodies
+  cd $t_TEST_TMP           # properties are available within function bodies
   tar -cf $LOG.tar .
 }
 
@@ -34,7 +34,7 @@ test_true () {             # the test functions follow the pattern 'test_*'
 
 test_status_of_prog () {   # every test runs as t_setup, test_*, t_teardown
   t_expect_status prog 0   # use t_expect_* for reasonable output on failures
-  prog >"$t_TEST_DIR"/out  # temporary t_TEST_DIR for each test
+  prog >"$t_TEST_TMP"/out  # temporary dir t_TEST_TMP created for each test
 }
 
 . tea.sh                   # source tea.sh to run the tests
@@ -98,10 +98,11 @@ t_expect_status <cmd> <status>   # compare <command> exit code with <status>
 t_expect_output <cmd> <output>   # compare <command> stdout with <output>
 t_expect_value '<exp>' <value>   # compare <expression> and <value>
 
+t_TEST_FILE            # the file name of the currently running test
 t_TEST_NAME            # the actual test name (= test function name)
 t_BASE_DIR             # the shell working dir when calling the test script
-t_TEST_DIR             # the temporary test dir crated as:
-                       # <tmp-dir>/<test-file-name>/<test-name>
+t_BASE_TMP             # a temparary test base dir under <tmp-dir>
+t_TEST_TMP             # a temparary test dir under t_BASE_DIR
 ```
 
 ## development

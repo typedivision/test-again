@@ -12,11 +12,10 @@ ok 1 test_pass"
 }
 
 test_tea_runs_script_in_pwd () {
-  mkdir -p "$t_TEST_DIR"
-  sed -e '/helper/d' test/cases/ok > "$t_TEST_DIR/pass"
-  chmod +x "$t_TEST_DIR/pass"
+  sed -e '/helper/d' test/cases/ok > "$t_TEST_TMP/pass"
+  chmod +x "$t_TEST_TMP/pass"
 
-  cd "$t_TEST_DIR"
+  cd "$t_TEST_TMP"
   t_expect_output "tea.sh pass" "\
 1..1
 ok 1 test_pass"
@@ -140,19 +139,21 @@ test_script_opt_dv_is_the_same_as_d () {
 }
 
 test_script_opt_default_deletes_tmpdir () {
+  rm -rf $_t_TMP_DIR/ok_*
   test/cases/ok
-  t_expect_status "test -e $_t_TMP_DIR/ok" 1
+  t_expect_status "ls $_t_TMP_DIR/ok_*" 1 2>/dev/null
 }
 
 test_script_opt_k_keeps_tmpdir () {
+  rm -rf $_t_TMP_DIR/ok_*
   test/cases/ok -k
-  t_expect_status "test -e $_t_TMP_DIR/ok" 0
-  rm -rf "$_t_TMP_DIR/ok"
+  t_expect_status "ls $_t_TMP_DIR/ok_*" 0
+  rm -rf $_t_TMP_DIR/ok_*
 }
 
 test_script_opt_t_sets_tmpdir () {
   test/cases/ok -k -t "temp"
-  t_expect_status "test -e $PWD/temp/ok" 0
+  t_expect_status "ls $PWD/temp/ok_*" 0
   rm -rf "$PWD/temp"
 }
 
@@ -161,10 +162,11 @@ test_script_opt_t_sets_tmpdir () {
 #
 
 test_properties_are_available () {
-  t_expect_value '$t_BASE_DIR' "$PWD"
-  t_expect_value '$t_TEST_DIR' "$PWD/tmp/suite/test_properties_are_available"
-  t_expect_value '$t_TEST_NAME' "test_properties_are_available"
   t_expect_value '$t_TEST_FILE' "test/suite"
+  t_expect_value '$t_TEST_NAME' "test_properties_are_available"
+  t_expect_value '$t_BASE_DIR' "$PWD"
+  t_expect_value '$t_BASE_TMP' "$PWD/tmp/suite_$$"
+  t_expect_value '$t_TEST_TMP' "$PWD/tmp/suite_$$/test_properties_are_available"
 }
 
 #

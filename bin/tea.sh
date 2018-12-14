@@ -117,7 +117,7 @@ _t_run_test_functions () {
   local test_case="${test_file##*/}"
   test_case="${test_case%\.*}"
 
-  local case_dir="$_t_TMP_DIR/$test_case"
+  local case_dir="$_t_TMP_DIR/${test_case}_$$"
   if ! [ "$_t_OPT_LIST" ] && ! rm -rf "$case_dir"; then
     echo "error: could not clean existing test dir: $case_dir"
     exit 1
@@ -139,14 +139,15 @@ _t_run_test_functions () {
       continue
     fi
 
-    export t_TEST_NAME=$test_name
     export t_TEST_FILE=$test_file
+    export t_TEST_NAME=$test_name
     export t_BASE_DIR="$_t_TOP_DIR"
-    export t_TEST_DIR="$case_dir/$test_name"
+    export t_BASE_TMP="$case_dir"
+    export t_TEST_TMP="$case_dir/$test_name"
     export t_CALL_STATUS=""
     export t_CALL_OUTPUT=""
 
-    mkdir -p "$t_TEST_DIR"
+    mkdir -p "$t_TEST_TMP"
     {
       if [ "$_t_OPT_VERB" ]; then
         echo "$test_name [$test_desc]"
@@ -155,18 +156,18 @@ _t_run_test_functions () {
       # use a subprocess to prevent leakage (eg set -x)
       # a zero exit status is considered a pass, otherwise fail
       (_t_run_test)
-      [ $? -eq 0 ] || touch "$t_TEST_DIR"/fail
+      [ $? -eq 0 ] || touch "$t_TEST_TMP"/fail
 
     } 2>&1 | sed "/^ *#/! s/^/$_t_SUB_INDENT# /" >&2
 
-    if [ -e "$t_TEST_DIR"/bail ]; then
-      local reason="$(cat "$t_TEST_DIR"/bail | sed '/^./ s/^/ /')"
+    if [ -e "$t_TEST_TMP"/bail ]; then
+      local reason="$(cat "$t_TEST_TMP"/bail | sed '/^./ s/^/ /')"
       >&3 echo "bail out!$reason"
       exit 1
-    elif [ -e "$t_TEST_DIR"/skip ]; then
-      local reason="$(cat "$t_TEST_DIR"/skip | sed '/^./ s/^/ /')"
+    elif [ -e "$t_TEST_TMP"/skip ]; then
+      local reason="$(cat "$t_TEST_TMP"/skip | sed '/^./ s/^/ /')"
       status="ok $test_cnt $test_name # skip$reason"
-    elif [ -e "$t_TEST_DIR"/fail ]; then
+    elif [ -e "$t_TEST_TMP"/fail ]; then
       status="not ok $test_cnt $test_name"
       touch "$case_dir"/fail
     else
@@ -240,14 +241,14 @@ fi
 # Skip this test with optional reason.
 t_skip () {
   local reason="${1:-}"
-  printf "$reason\n" > "$t_TEST_DIR"/skip
+  printf "$reason\n" > "$t_TEST_TMP"/skip
   exit 0
 }
 
 # Abort the test run with optional reason.
 t_bailout () {
   local reason="${1:-}"
-  printf "$reason\n" > "$t_TEST_DIR"/bail
+  printf "$reason\n" > "$t_TEST_TMP"/bail
   exit 1
 }
 
