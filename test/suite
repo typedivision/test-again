@@ -5,13 +5,13 @@
 # tea.sh test
 #
 
-test_tea_runs_file () {
+test_tea_runs_script () {
   t_expect_output "test/cases/ok" "\
 1..1
 ok 1 test_pass"
 }
 
-test_tea_runs_file_in_pwd () {
+test_tea_runs_script_in_pwd () {
   mkdir -p "$t_TEST_DIR"
   sed -e '/helper/d' test/cases/ok > "$t_TEST_DIR/pass"
   chmod +x "$t_TEST_DIR/pass"
@@ -22,7 +22,7 @@ test_tea_runs_file_in_pwd () {
 ok 1 test_pass"
 }
 
-test_tea_runs_multiple_files () {
+test_tea_runs_multiple_scripts () {
   t_expect_output "tea.sh test/cases/ok test/cases/not_ok" "\
 1..1
 ok 1 test_pass
@@ -30,7 +30,7 @@ ok 1 test_pass
 not ok 1 test_fail"
 }
 
-test_tea_runs_tests_with_same_name_in_different_files () {
+test_tea_runs_tests_with_same_name_in_different_scripts () {
   t_expect_output "tea.sh test/cases/xyz_one test/cases/xyz_two" "\
 1..1
 ok 1 test_xyz
@@ -38,7 +38,7 @@ ok 1 test_xyz
 not ok 1 test_xyz"
 }
 
-test_tea_reports_non_executable_files () {
+test_tea_reports_non_executable_scripts () {
   t_expect_output "tea.sh test/cases/nox" \
     "error: test/cases/nox not executable"
 }
@@ -49,27 +49,27 @@ error: test not a file
 error: test/miss not a file"
 }
 
-test_file_runs_tests () {
-  t_expect_output "test/cases/abc -q" "\
+test_script_runs_tests () {
+  t_expect_output "test/cases/abc" "\
 1..4
 ok 1 test_a
 ok 2 test_b
 not ok 3 test_c
-ok 4 test_s # skip s"
+ok 4 test_s # skip s" 2>/dev/null
 }
 
-test_file_runs_named_tests () {
-  t_expect_output "test/cases/abc -q test_a test_c" "\
+test_script_runs_named_tests () {
+  t_expect_output "test/cases/abc test_a test_c" "\
 1..2
 ok 1 test_a
-not ok 2 test_c"
+not ok 2 test_c" 2>/dev/null
 }
 
-test_file_runs_tests_matching_patterns () {
-  t_expect_output 'test/cases/abc -q test_[ac]' "\
+test_script_runs_tests_matching_patterns () {
+  t_expect_output 'test/cases/abc test_[ac]' "\
 1..2
 ok 1 test_a
-not ok 2 test_c"
+not ok 2 test_c" 2>/dev/null
 }
 
 #
@@ -80,7 +80,7 @@ test_tea_opt_h_prints_help () {
   t_expect_status 'tea.sh -h | grep -q "usage:"' 0
 }
 
-test_file_opt_h_prints_help () {
+test_script_opt_h_prints_help () {
   t_expect_status 'test/cases/ok -h | grep -q "usage:"' 0
 }
 
@@ -92,7 +92,7 @@ test_tea_opt_l_lists_tests () {
 [test/cases/abc:21] test_s"
 }
 
-test_file_opt_l_lists_tests () {
+test_script_opt_l_lists_tests () {
   t_expect_output "test/cases/abc -l" "\
 [test/cases/abc:3] test_a
 [test/cases/abc:9] test_b
@@ -100,20 +100,14 @@ test_file_opt_l_lists_tests () {
 [test/cases/abc:21] test_s"
 }
 
-test_file_opt_default_prints_test_stderr () {
+test_script_opt_default_prints_test_stderr () {
   t_expect_output "test/cases/abc test_a 2>&1" "\
 1..1
 # A
 ok 1 test_a"
 }
 
-test_file_opt_q_prints_result_only () {
-  t_expect_output "test/cases/abc -q test_a 2>&1" "\
-1..1
-ok 1 test_a"
-}
-
-test_file_opt_v_prints_test_description_and_stdout () {
+test_script_opt_v_prints_test_description_and_stdout () {
   t_expect_output "test/cases/abc -v test_a 2>&1" "\
 1..1
 # test_a [test/cases/abc:3]
@@ -122,74 +116,68 @@ test_file_opt_v_prints_test_description_and_stdout () {
 ok 1 test_a"
 }
 
-test_file_opt_v_prints_result_on_stdout () {
+test_script_opt_v_prints_result_on_stdout () {
   t_expect_output "test/cases/abc -v test_a 2>/dev/null" "\
 1..1
 ok 1 test_a"
 }
 
-test_file_opt_v_prints_comments_on_stderr () {
+test_script_opt_v_prints_comments_on_stderr () {
   t_expect_output "test/cases/abc -v test_a 2>&1 1>/dev/null" "\
 # test_a [test/cases/abc:3]
 # a
 # A"
 }
 
-test_file_opt_qv_is_the_same_as_v () {
-  t_expect_output "test/cases/abc -qv test_a 2>&1" "\
-1..1
-# test_a [test/cases/abc:3]
-# a
-# A
-ok 1 test_a"
-}
-
-test_file_opt_d_prints_trace_logs () {
+test_script_opt_d_prints_trace_logs () {
   local loglines=$(test/cases/ok -d 2>&1 | wc -l | xargs)
   t_expect_status "test $loglines -eq 14" 0
 }
 
-test_file_opt_dqv_is_the_same_as_d () {
-  local loglines=$(test/cases/ok -dqv 2>&1 | wc -l | xargs)
+test_script_opt_dv_is_the_same_as_d () {
+  local loglines=$(test/cases/ok -dv 2>&1 | wc -l | xargs)
   t_expect_status "test $loglines -eq 14" 0
 }
 
-test_file_opt_default_deletes_tmpdir () {
+test_script_opt_default_deletes_tmpdir () {
   test/cases/ok
   t_expect_status "test -e $_t_TMP_DIR/ok" 1
 }
 
-test_file_opt_k_keeps_tmpdir () {
+test_script_opt_k_keeps_tmpdir () {
   test/cases/ok -k
   t_expect_status "test -e $_t_TMP_DIR/ok" 0
   rm -rf "$_t_TMP_DIR/ok"
 }
 
-test_file_opt_t_sets_tmpdir () {
-  test/cases/ok -k -t "$_t_TOP_DIR/temp"
-  t_expect_status "test -e $_t_TOP_DIR/temp/ok" 0
-  rm -rf "$_t_TOP_DIR/temp"
+test_script_opt_t_sets_tmpdir () {
+  test/cases/ok -k -t "temp"
+  t_expect_status "test -e $PWD/temp/ok" 0
+  rm -rf "$PWD/temp"
 }
 
 #
 # properties test
 #
 
-test_property_base_dir () {
-  t_expect_value '$t_BASE_DIR' "$_t_TOP_DIR"
-}
-
-test_property_test_dir () {
-  t_expect_value '$t_TEST_DIR' "$_t_TOP_DIR/tmp/suite/test_property_test_dir"
-}
-
-test_property_test_name () {
-  t_expect_value '$t_TEST_NAME' "test_property_test_name"
+test_properties_are_available () {
+  t_expect_value '$t_BASE_DIR' "$PWD"
+  t_expect_value '$t_TEST_DIR' "$PWD/tmp/suite/test_properties_are_available"
+  t_expect_value '$t_TEST_NAME' "test_properties_are_available"
+  t_expect_value '$t_TEST_FILE' "test/suite"
 }
 
 #
 # exit status test
 #
+
+test_tea_exits_1_for_non_executable_scripts () {
+  t_expect_status "tea.sh test/nox" 1
+}
+
+test_tea_exits_1_for_non_files () {
+  t_expect_status "tea.sh test test/miss" 1
+}
 
 test_tea_exits_0_for_passing_test () {
   t_expect_status "tea.sh test/cases/ok" 0
@@ -199,20 +187,12 @@ test_tea_exits_1_for_failing_test () {
   t_expect_status "tea.sh test/cases/ok" 0
 }
 
-test_file_exits_0_for_passing_test () {
+test_script_exits_0_for_passing_test () {
   t_expect_status "test/cases/ok" 0
 }
 
-test_file_exits_1_for_failing_test () {
+test_script_exits_1_for_failing_test () {
   t_expect_status "test/cases/not_ok" 1
-}
-
-test_tea_exits_1_for_non_executable_files () {
-  t_expect_status "tea.sh test/nox" 1
-}
-
-test_tea_exits_1_for_non_files () {
-  t_expect_status "tea.sh test test/miss" 1
 }
 
 #
@@ -293,8 +273,8 @@ test_case_bailout () {
   t_expect_output $test "$(case_output $test)"
 }
 
-test_case_exec () {
-  local test=test/cases/exec
+test_case_call () {
+  local test=test/cases/call
   t_expect_output $test "$(case_output $test)"
 }
 
@@ -315,7 +295,7 @@ test_case_public_function_conflict () {
 
 test_case_undeclared_variable () {
   local test=test/cases/undeclared_variable
-  t_expect_output "$test -q" "$(case_output $test)"
+  t_expect_output "$test" "$(case_output $test)" 2>/dev/null
 }
 
 #

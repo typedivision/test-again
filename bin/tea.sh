@@ -20,7 +20,7 @@ _t_usage () {
 "
   fi
   echo "\
-usage: $_t_SCRIPT [-h|-l|-dikqv] [-t <tmp-dir>] $args
+usage: $_t_SCRIPT [-h|-l|-dikv] [-t <tmp-dir>] $args
 
 $examples
 options:
@@ -30,7 +30,6 @@ options:
   -i  interactive stops after tests
   -k  keep (do not delete) the test dirs
   -l  list tests (don't run, just print)
-  -q  quiet output (hide stderr)
   -t  set the tmp dir path (default ./tmp)
   -v  verbose output (print stdout)
 "
@@ -42,7 +41,7 @@ _t_help () {
   _t_usage
 }
 
-while getopts "dhiklqt:v" option; do
+while getopts "dhiklt:v" option; do
   case "$option" in
     d) _t_OPT_DEBUG=1; _t_OPT_VERB=1 ;;
     h) _t_help
@@ -50,7 +49,6 @@ while getopts "dhiklqt:v" option; do
     i) _t_OPT_INTERACT=1 ;;
     k) _t_OPT_KEEP_TMP=1 ;;
     l) _t_OPT_LIST=1 ;;
-    q) _t_OPT_QUIET=1 ;;
     t) _t_OPT_TMP_DIR=$OPTARG ;;
     v) _t_OPT_VERB=1 ;;
     *) _t_usage | head -n 1
@@ -67,7 +65,6 @@ export _t_OPT_DEBUG="${_t_OPT_DEBUG:-}"
 export _t_OPT_INTERACT="${_t_OPT_INTERACT:-}"
 export _t_OPT_KEEP_TMP="${_t_OPT_KEEP_TMP:-}"
 export _t_OPT_LIST="${_t_OPT_LIST:-}"
-export _t_OPT_QUIET="${_t_OPT_QUIET:-}"
 export _t_OPT_VERB="${_t_OPT_VERB:-}"
 export _t_SUB_INDENT="${_t_SUB_INDENT:-}"
 
@@ -88,8 +85,6 @@ _t_list () {
 _t_run_test () {
   if [ "$_t_OPT_VERB" ]; then
     exec 1>&2
-  elif [ "$_t_OPT_QUIET" ]; then
-    exec 1>/dev/null 2>/dev/null
   else
     exec 1>/dev/null
   fi
@@ -145,10 +140,11 @@ _t_run_test_functions () {
     fi
 
     export t_TEST_NAME=$test_name
+    export t_TEST_FILE=$test_file
     export t_BASE_DIR="$_t_TOP_DIR"
     export t_TEST_DIR="$case_dir/$test_name"
-    export t_EXEC_STATUS=""
-    export t_EXEC_OUTPUT=""
+    export t_CALL_STATUS=""
+    export t_CALL_OUTPUT=""
 
     mkdir -p "$t_TEST_DIR"
     {
@@ -222,6 +218,11 @@ _t_run_test_files () {
   fi
 }
 
+# Helper function for expect message indention for multi lines.
+_inl () {
+  echo "$1" | sed "s/^/  /"
+}
+
 #
 # public functions
 #
@@ -256,15 +257,11 @@ t_subtest () {
   1>&3 $@
 }
 
-# Helper function for expect message indention for all lines.
-_inl () {
-  echo "$1" | sed "s/^/  /"
-}
-
-t_exec () {
+# Call a program/function and save output and status.
+t_call () {
   set +e
-  t_EXEC_OUTPUT="$(set -e; $1)"
-  t_EXEC_STATUS=$?
+  t_CALL_OUTPUT="$(set -e; $@)"
+  t_CALL_STATUS=$?
   set -e
 }
 

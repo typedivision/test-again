@@ -29,12 +29,12 @@ t_teardown () {            # optional teardown step, is always executed
 }
 
 test_true () {             # the test functions follow the pattern 'test_*'
-  true                     # return 0 to pass, otherwise the test fails
+  return                   # return 0 to pass, otherwise the test fails
 }
 
 test_status_of_prog () {   # every test runs as t_setup, test_*, t_teardown
   t_expect_status prog 0   # use t_expect_* for reasonable output on failures
-  prog >"$t_TEST_DIR"/out  # temporary t_TEST_DIR for each test - see options
+  prog >"$t_TEST_DIR"/out  # temporary t_TEST_DIR for each test
 }
 
 . tea.sh                   # source tea.sh to run the tests
@@ -68,7 +68,7 @@ not ok 2 test_status_of_prog
 ## options
 
 ```
-usage: tea.sh [-h|-l|-dikqv] [-t <tmp-dir>] [<test-file>...]
+usage: tea.sh [-h|-l|-dikv] [-t <tmp-dir>] [<test-file>...]
 
 options:
 
@@ -77,7 +77,6 @@ options:
   -i  interactive stops after tests
   -k  keep (do not delete) the test dirs
   -l  list tests (don't run, just print)
-  -q  quiet output (hide stderr)
   -t  set the tmp dir path (default ./tmp)
   -v  verbose output (print stdout)
 ```
@@ -92,7 +91,7 @@ t_skip [<reason>]      # skip the test with optional reason
 t_bailout [<reason>]   # abort the test execution
 t_subtest <file>       # run script file as subtest
 
-t_exec <cmd>           # run <command> and set result as
+t_call <cmd>           # run <command> and save result in
                        # t_STATUS and t_OUTPUT
 
 t_expect_status <cmd> <status>   # compare <command> exit code with <status>
