@@ -20,14 +20,13 @@ _t_usage () {
 "
   fi
   echo "\
-usage: $_t_CMD [-h|-l|-dikv] [-t <tmp-dir>] $args
+usage: $_t_CMD [-h|-l|-dkv] [-t <tmp-dir>] $args
 
 $examples
 options:
 
   -d  debug output (print shell traces)
   -h  print this help
-  -i  interactive stops after tests
   -k  keep (do not delete) the test dirs
   -l  list tests (don't run, just print)
   -t  set the tmp dir path (default ./tmp)
@@ -41,12 +40,11 @@ _t_help () {
   _t_usage
 }
 
-while getopts "dhiklt:v" option; do
+while getopts "dhklt:v" option; do
   case "$option" in
     d) _t_OPT_DEBUG=1; _t_OPT_VERB=1 ;;
     h) _t_help
        exit 0 ;;
-    i) _t_OPT_INTERACT=1 ;;
     k) _t_OPT_KEEP_TMP=1 ;;
     l) _t_OPT_LIST=1 ;;
     t) _t_OPT_TMP_DIR=$OPTARG ;;
@@ -62,7 +60,6 @@ _t_TOP_DIR="$PWD"
 # export command options to test file and subtest runs
 export _t_TMP_DIR="${_t_OPT_TMP_DIR:-$_t_TOP_DIR/tmp}"
 export _t_OPT_DEBUG="${_t_OPT_DEBUG:-}"
-export _t_OPT_INTERACT="${_t_OPT_INTERACT:-}"
 export _t_OPT_KEEP_TMP="${_t_OPT_KEEP_TMP:-}"
 export _t_OPT_LIST="${_t_OPT_LIST:-}"
 export _t_OPT_VERB="${_t_OPT_VERB:-}"
@@ -188,10 +185,6 @@ _t_run_test_functions () {
 
     >&3 echo "$_t_SUB_INDENT$status"
     test_cnt=$((test_cnt + 1))
-
-    if [ "$_t_OPT_INTERACT" ]; then
-      read x < /dev/tty
-    fi
   done
 
   local result=0
@@ -295,6 +288,12 @@ t_call () {
     t_CALL_STATUS=$?
   fi
   set -e
+}
+
+# Debug function to stop test execution.
+t_pause () {
+  local x
+  read x < /dev/tty
 }
 
 # Assert, if status (exit code) of command is not equal to the expected output.
