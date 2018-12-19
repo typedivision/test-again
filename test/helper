@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-if [ -e bin/tea.sh ]
+if [ -e bin/test-again ]
 then
   export PATH="$PWD/bin:$PATH"
 else

@@ -10,7 +10,7 @@ mkdir -p tmp/distributions
     echo "debian /bin/bash /bin/dash /bin/busybox"
   fi
 } | while read os shells; do
-  image=ts_$os
+  image=ta_$os
   outfile=tmp/distributions/$image.buildlog
 
   echo "make $image..."
@@ -25,7 +25,7 @@ mkdir -p tmp/distributions
     outfile=tmp/distributions/${image}_$(basename $shell)
     echo "test $image $shell..."
     {
-      docker run -i --rm -v $PWD:/tmp/tea -w /tmp/tea $image /bin/bash 2>&1 <<EOF
+      docker run -i --rm -v $PWD:/tmp/ta -w /tmp/ta $image /bin/bash 2>&1 <<EOF
 ln -sf $shell /bin/sh
 test/suite
 EOF

@@ -5,4 +5,4 @@ test_fail () {
 }
 
 . test/helper
-. tea.sh
+. test-again

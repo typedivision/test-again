@@ -25,4 +25,4 @@ test_subshell () (
 test_subshell_oneline () ( true )
 
 . test/helper
-. tea.sh
+. test-again

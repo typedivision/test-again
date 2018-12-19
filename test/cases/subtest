@@ -4,7 +4,7 @@ create () {
   {
     echo "#!/usr/bin/env sh"
     cat
-    echo ". bin/tea.sh"
+    echo ". bin/test-again"
   } > $t_TEST_TMP/$1
   chmod +x $t_TEST_TMP/$1
 }
@@ -85,4 +85,4 @@ not ok 1 test"
 }
 
 . test/helper
-. tea.sh
+. test-again

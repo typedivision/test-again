@@ -10,4 +10,4 @@ test_check_working_dir () {
 }
 
 . test/helper
-. tea.sh
+. test-again

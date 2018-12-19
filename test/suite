@@ -2,48 +2,48 @@
 . test/helper
 
 #
-# tea.sh test
+# test-again test
 #
 
-test_tea_runs_script () {
+test_ta_runs_script () {
   t_expect_output "test/cases/ok" "\
 1..1
 ok 1 test_pass"
 }
 
-test_tea_runs_script_in_pwd () {
+test_ta_runs_script_in_pwd () {
   sed -e '/helper/d' test/cases/ok > "$t_TEST_TMP/pass"
   chmod +x "$t_TEST_TMP/pass"
 
   cd "$t_TEST_TMP"
-  t_expect_output "tea.sh pass" "\
+  t_expect_output "test-again pass" "\
 1..1
 ok 1 test_pass"
 }
 
-test_tea_runs_multiple_scripts () {
-  t_expect_output "tea.sh test/cases/ok test/cases/not_ok" "\
+test_ta_runs_multiple_scripts () {
+  t_expect_output "test-again test/cases/ok test/cases/not_ok" "\
 1..1
 ok 1 test_pass
 1..1
 not ok 1 test_fail"
 }
 
-test_tea_runs_tests_with_same_name_in_different_scripts () {
-  t_expect_output "tea.sh test/cases/xyz_one test/cases/xyz_two" "\
+test_ta_runs_tests_with_same_name_in_different_scripts () {
+  t_expect_output "test-again test/cases/xyz_one test/cases/xyz_two" "\
 1..1
 ok 1 test_xyz
 1..1
 not ok 1 test_xyz"
 }
 
-test_tea_reports_non_executable_scripts () {
-  t_expect_output "tea.sh test/cases/nox" \
+test_ta_reports_non_executable_scripts () {
+  t_expect_output "test-again test/cases/nox" \
     "error: test/cases/nox not executable"
 }
 
-test_tea_reports_non_files () {
- t_expect_output "tea.sh test test/miss" "\
+test_ta_reports_non_files () {
+ t_expect_output "test-again test test/miss" "\
 error: test not a file
 error: test/miss not a file"
 }
@@ -75,16 +75,16 @@ not ok 2 test_c" 2>/dev/null
 # options test
 #
 
-test_tea_opt_h_prints_help () {
-  t_expect_status 'tea.sh -h | grep -q "usage:"' 0
+test_ta_opt_h_prints_help () {
+  t_expect_status 'test-again -h | grep -q "usage:"' 0
 }
 
 test_script_opt_h_prints_help () {
   t_expect_status 'test/cases/ok -h | grep -q "usage:"' 0
 }
 
-test_tea_opt_l_lists_tests () {
-  t_expect_output "tea.sh -l test/cases/abc" "\
+test_ta_opt_l_lists_tests () {
+  t_expect_output "test-again -l test/cases/abc" "\
 [test/cases/abc:3] test_a
 [test/cases/abc:9] test_b
 [test/cases/abc:15] test_c
@@ -174,20 +174,20 @@ test_properties_are_available () {
 # exit status test
 #
 
-test_tea_exits_1_for_non_executable_scripts () {
-  t_expect_status "tea.sh test/nox" 1
+test_ta_exits_1_for_non_executable_scripts () {
+  t_expect_status "test-again test/nox" 1
 }
 
-test_tea_exits_1_for_non_files () {
-  t_expect_status "tea.sh test test/miss" 1
+test_ta_exits_1_for_non_files () {
+  t_expect_status "test-again test test/miss" 1
 }
 
-test_tea_exits_0_for_passing_test () {
-  t_expect_status "tea.sh test/cases/ok" 0
+test_ta_exits_0_for_passing_test () {
+  t_expect_status "test-again test/cases/ok" 0
 }
 
-test_tea_exits_1_for_failing_test () {
-  t_expect_status "tea.sh test/cases/ok" 0
+test_ta_exits_1_for_failing_test () {
+  t_expect_status "test-again test/cases/ok" 0
 }
 
 test_script_exits_0_for_passing_test () {
@@ -250,15 +250,15 @@ test_case_test_detection () {
 # misc tests
 #
 
-test_tea_prevents_hang_by_stdin () {
+test_ta_prevents_hang_by_stdin () {
   # cat hangs if stdin is waiting
   local from_stdin=$(cat)
   t_expect_value '$from_stdin' ""
 }
 
-test_tea_allows_exit_trap () {
+test_ta_allows_exit_trap () {
   trap "exit 0" EXIT
   exit 1
 }
 
-. bin/tea.sh
+. bin/test-again

@@ -24,4 +24,4 @@ test_s () {
 }
 
 . test/helper
-. tea.sh
+. test-again

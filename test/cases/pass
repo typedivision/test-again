@@ -47,4 +47,4 @@ test_multiple_expects_pass () {
 }
 
 . test/helper
-. tea.sh
+. test-again

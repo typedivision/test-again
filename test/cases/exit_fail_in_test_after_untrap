@@ -17,4 +17,4 @@ test_exit_fail_in_test_after_untrap () {
 #) not ok 1 test_exit_fail_in_test_after_untrap
 
 . test/helper
-. tea.sh
+. test-again

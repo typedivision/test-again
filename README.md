@@ -1,24 +1,24 @@
 ![test-again](test-again.png)
 
-tea.sh (test again) runs shell script functions as tests
-========================================================
+runs shell script functions as tests
+====================================
 
-**tea.sh** comes as a shell script to run functions of script files as tests
-for any programs. The test script files can be run individually or in a batch
-format using `tea.sh` as command.
+**test-again** comes as a shell script to run functions of script files as tests
+for any kind of programs. The test script files can be run individually or in a
+batch format using `test-again` as command.
 
-**tea.sh** generates [TAP](http://testanything.org/) compliant output.
+**test-again** generates [TAP](http://testanything.org/) compliant output.
 
 ## test script files
 
-The `tea.sh` command runs script files defining the test cases.
+The `test-again` command runs script files defining the test cases.
 Test scripts have the form of this `test_script` file:
 ```
 #!/usr/bin/env sh          # bash, dash or busybox ash
 
 STORE=/tmp/results         # define variables like in any other shell script
 
-t_setup () {               # optional setup, the 't_' is for tea.sh functions
+t_setup () {               # optional setup, 't_' is for test-again functions
   mkdir -p $STORE          # if setup fails, the test will fail immediately
 }
 
@@ -37,12 +37,12 @@ test_status_of_prog () {   # every test runs as t_setup, test_*, t_teardown
   prog >"$t_TEST_TMP"/out  # temporary dir t_TEST_TMP created for each test
 }
 
-. tea.sh                   # source tea.sh to run the tests
+. test-again               # source test-again to run the tests
 ```
 
 To run the tests, use any of
 ```
-tea.sh test_script [...]   # run the test_script (and optionally more files)
+test-again test_script ... # run the test_script (and optionally more files)
 ./test_script              # run the test_script file as a single test
 ./test_script test_true    # run a single test function from test_script
 ```
@@ -68,7 +68,7 @@ not ok 2 test_status_of_prog
 ## options
 
 ```
-usage: tea.sh [-h|-l|-dikv] [-t <tmp-dir>] [<script>...]
+usage: test-again [-h|-l|-dikv] [-t <tmp-dir>] [<script>...]
 
 options:
 
@@ -81,29 +81,29 @@ options:
   -v  verbose output (print stdout)
 ```
 
-## tea.sh functions and properties
+## test-again functions and properties
 
 ```
-t_setup                # test setup step
-t_teardown             # test teardown step
+t_setup                   # test setup step
+t_teardown                # test teardown step
 
-t_skip [<reason>]      # skip the test with optional reason
-t_bailout [<reason>]   # abort the test execution
-t_subtest <file>       # run script file as subtest
+t_skip [<reason>]         # skip the test with optional reason
+t_bailout [<reason>]      # abort the test execution
+t_subtest <file>          # run script file as subtest
 
-t_call <cmd> <args>    # run <command> and save result in
-                       # t_STATUS and t_OUTPUT
+t_call [--errout] <cmd>   # run <command> and save result in
+                          # t_STATUS and t_OUTPUT
 
 t_expect_status <cmd> <status>   # compare <command> exit code with <status>
 t_expect_output <cmd> <output>   # compare <command> stdout with <output>
 t_expect_value '<exp>' <value>   # compare <expression> and <value>
 
-t_TEST_FILE            # the file name of the currently running test
-t_TEST_NAME            # the actual test name (= test function name)
-t_TEST_NUM             # the actual test number
-t_BASE_DIR             # the shell working dir when calling the test script
-t_BASE_TMP             # a temparary test base dir under <tmp-dir>
-t_TEST_TMP             # a temparary test dir under t_BASE_DIR
+t_TEST_FILE               # the file name of the currently running test script
+t_TEST_NAME               # the actual test name (= test function name)
+t_TEST_NUM                # the actual test number
+t_BASE_DIR                # the shell working dir when calling the test script
+t_BASE_TMP                # a temparary test base dir under <tmp-dir>
+t_TEST_TMP                # a temparary test dir under t_BASE_DIR
 ```
 
 ## development
@@ -121,5 +121,5 @@ test/distributions
 
 ## authors
 
-the `tea.sh` script is based on the `ts` command
+the `test-again` script is initially based on the `ts` command
 by Simon Chiang http://github.com/thinkerbot/ts

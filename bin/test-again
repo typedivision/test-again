@@ -1,26 +1,26 @@
 #!/usr/bin/env sh
 
-_t_SCRIPT="${0##*/}"
+_t_CMD="${0##*/}"
 
 # Prints usage message.
 _t_usage () {
-  if [ "$_t_SCRIPT" = tea.sh ]; then
+  if [ "$_t_CMD" = test-again ]; then
     local args="[<script>...]"
     local examples="\
-  tea.sh script_*   # run test functions of multiple scripts
-  script_1          # run test functions of a single script
-  script_1 test_a   # run selected test function from script
+  test-again case_*    # run test functions of multiple scripts
+  case_a               # run test functions of a single script
+  case_a test_a        # run selected test function from script
 "
   else
     local args="[<test-function>...]"
     local examples="\
-  $_t_SCRIPT                     # run all test functions
-  $_t_SCRIPT <test_a>            # run a single test function
-  $_t_SCRIPT <test_a> <test_b>   # run selected test functions
+  $_t_CMD                     # run all test functions
+  $_t_CMD <test_a>            # run a single test function
+  $_t_CMD <test_a> <test_b>   # run selected test functions
 "
   fi
   echo "\
-usage: $_t_SCRIPT [-h|-l|-dikv] [-t <tmp-dir>] $args
+usage: $_t_CMD [-h|-l|-dikv] [-t <tmp-dir>] $args
 
 $examples
 options:
@@ -204,7 +204,7 @@ _t_run_test_functions () {
   return $result
 }
 
-# Runs multipe test files given as 'tea.sh' arguments.
+# Runs multipe test files given as 'test-again' arguments.
 _t_run_test_files () {
   local error
   for test_file in "$@"; do
@@ -358,7 +358,7 @@ t_expect_value () {
 # Run the given test files or this script as single suite.
 #
 
-if [ "$_t_SCRIPT" = tea.sh ]; then
+if [ "$_t_CMD" = test-again ]; then
   _t_run_test_files $@
 else
   _t_run_test_functions $@
