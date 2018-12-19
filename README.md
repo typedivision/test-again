@@ -4,8 +4,10 @@ runs shell script functions as tests
 ====================================
 
 **test-again** comes as a shell script to run functions of script files as tests
-for any kind of programs. The test script files can be run individually or in a
-batch format using `test-again` as command.
+for any kind of programs.
+
+The test script files can be run individually or in a batch format using
+**test-again** as command.
 
 **test-again** generates [TAP](http://testanything.org/) compliant output.
 
@@ -19,11 +21,11 @@ Test scripts have the form of this `test_script` file:
 STORE=/tmp/results         # define variables like in any other shell script
 
 t_setup () {               # optional setup, 't_' is for test-again functions
-  mkdir -p $STORE          # if setup fails, the test will fail immediately
+  mkdir $STORE             # if setup fails, the test will fail immediately
 }
 
 t_teardown () {            # optional teardown step, is always executed
-  LOG=$STORE/$t_TEST_NAME  # given test properties also have the prefix '$t_'
+  LOG=$STORE/$t_TEST_NAME  # given test properties also have the prefix 't_'
   cd $t_TEST_TMP           # properties are available within function bodies
   tar -cf $LOG.tar .
 }
@@ -32,7 +34,7 @@ test_true () {             # the test functions follow the pattern 'test_*'
   return                   # return 0 to pass, otherwise the test fails
 }
 
-test_status_of_prog () {   # every test runs as t_setup, test_*, t_teardown
+test_status_of_prog () {   # for all tests t_setup and t_teardown is called
   t_expect_status prog 0   # use t_expect_* for reasonable output on failures
   prog >"$t_TEST_TMP"/out  # temporary dir t_TEST_TMP created for each test
 }
@@ -68,13 +70,12 @@ not ok 2 test_status_of_prog
 ## options
 
 ```
-usage: test-again [-h|-l|-dikv] [-t <tmp-dir>] [<script>...]
+usage: test-again [-h|-l|-dkv] [-t <tmp-dir>] [<script>...]
 
 options:
 
   -d  debug output (print shell traces)
   -h  print this help
-  -i  interactive stops after tests
   -k  keep (do not delete) the test dirs
   -l  list tests (don't run, just print)
   -t  set the tmp dir path (default ./tmp)
@@ -93,10 +94,11 @@ t_subtest <file>          # run script file as subtest
 
 t_call [--errout] <cmd>   # run <command> and save result in
                           # t_STATUS and t_OUTPUT
+                          # --errout includes stderr
 
 t_expect_status <cmd> <status>   # compare <command> exit code with <status>
 t_expect_output <cmd> <output>   # compare <command> stdout with <output>
-t_expect_value '<exp>' <value>   # compare <expression> and <value>
+t_expect_value '<exp>' <value>   # compare <expression> result and <value>
 
 t_TEST_FILE               # the file name of the currently running test script
 t_TEST_NAME               # the actual test name (= test function name)
@@ -117,6 +119,9 @@ To run the tests for different distributions (alpine, debian) and specific shell
 (bash, dash, busybox as), start the [docker](https://www.docker.com/) test
 ```
 test/distributions
+
+# or run a single os/shell combination
+test/distributions debian /bin/dash
 ```
 
 ## authors
