@@ -5,18 +5,18 @@ _t_SCRIPT="${0##*/}"
 # Prints usage message.
 _t_usage () {
   if [ "$_t_SCRIPT" = tea.sh ]; then
-    local args="[<test-file>...]"
+    local args="[<script>...]"
     local examples="\
-  tea.sh test_*   # run test functions of multiple test files
-  test_1          # run test functions of a single test file
-  test_1 fn_a     # run selected test function of the test file
+  tea.sh script_*   # run test functions of multiple scripts
+  script_1          # run test functions of a single script
+  script_1 test_a   # run selected test function from script
 "
   else
     local args="[<test-function>...]"
     local examples="\
-  $_t_SCRIPT                 # run all test functions
-  $_t_SCRIPT <fn_a>          # run a single test function
-  $_t_SCRIPT <fn_a> <fn_b>   # run selected test functions
+  $_t_SCRIPT                     # run all test functions
+  $_t_SCRIPT <test_a>            # run a single test function
+  $_t_SCRIPT <test_a> <test_b>   # run selected test functions
 "
   fi
   echo "\
@@ -141,6 +141,7 @@ _t_run_test_functions () {
 
     export t_TEST_FILE=$test_file
     export t_TEST_NAME=$test_name
+    export t_TEST_NUM=$test_cnt
     export t_BASE_DIR="$_t_TOP_DIR"
     export t_BASE_TMP="$case_dir"
     export t_TEST_TMP="$case_dir/$test_name"
@@ -148,7 +149,7 @@ _t_run_test_functions () {
     export t_CALL_OUTPUT=""
 
     mkdir -p "$t_TEST_TMP"
-    {
+    (
       if [ "$_t_OPT_VERB" ]; then
         echo "$test_name [$test_desc]"
       fi
@@ -158,14 +159,25 @@ _t_run_test_functions () {
       (_t_run_test)
       [ $? -eq 0 ] || touch "$t_TEST_TMP"/fail
 
-    } 2>&1 | sed "/^ *#/! s/^/$_t_SUB_INDENT# /" >&2
+    ) 2>&1 | sed "s/^/$_t_SUB_INDENT# /" >&2
+
+    if [ -e "$t_TEST_TMP"/subtest ]; then
+      local subtest=$(cat "$t_TEST_TMP"/subtest)
+      (
+        _t_SUB_INDENT="    $_t_SUB_INDENT"
+        $subtest
+        [ $? -eq 0 ] || touch "$t_TEST_TMP"/fail
+      )
+    fi
 
     if [ -e "$t_TEST_TMP"/bail ]; then
-      local reason="$(cat "$t_TEST_TMP"/bail | sed '/^./ s/^/ /')"
+      local reason="$(cat "$t_TEST_TMP"/bail)"
+      [ "$reason" ] && reason=" $reason"
       >&3 echo "bail out!$reason"
       exit 1
     elif [ -e "$t_TEST_TMP"/skip ]; then
-      local reason="$(cat "$t_TEST_TMP"/skip | sed '/^./ s/^/ /')"
+      local reason="$(cat "$t_TEST_TMP"/skip)"
+      [ "$reason" ] && reason=" $reason"
       status="ok $test_cnt $test_name # skip$reason"
     elif [ -e "$t_TEST_TMP"/fail ]; then
       status="not ok $test_cnt $test_name"
@@ -219,9 +231,16 @@ _t_run_test_files () {
   fi
 }
 
-# Helper function for expect message indention for multi lines.
-_inl () {
-  echo "$1" | sed "s/^/  /"
+# Helper function for printing messages on stderr.
+_msg () {
+  >&2 echo "$1"
+}
+
+# Helper function for expect indention for multi lines.
+_ind () {
+  {
+    echo "$1" | sed "s/^/  /"
+  } >&2
 }
 
 #
@@ -254,15 +273,27 @@ t_bailout () {
 
 # Run a test file as subtest.
 t_subtest () {
-  _t_SUB_INDENT="    $_t_SUB_INDENT"
-  1>&3 $@
+  printf "$1\n" > "$t_TEST_TMP"/subtest
+  exit
 }
 
 # Call a program/function and save output and status.
 t_call () {
+  set +x
+  if [ "$1" = --errout ]; then
+    local errout=1
+    shift
+  fi
   set +e
-  t_CALL_OUTPUT="$(set -e; $@)"
-  t_CALL_STATUS=$?
+  if [ "${errout:-}" ]; then
+    [ "$_t_OPT_DEBUG" ] && set -x
+    t_CALL_OUTPUT="$(set -e; $@ 2>&1)"
+    t_CALL_STATUS=$?
+  else
+    [ "$_t_OPT_DEBUG" ] && set -x
+    t_CALL_OUTPUT="$(set -e; $@)"
+    t_CALL_STATUS=$?
+  fi
   set -e
 }
 
@@ -277,10 +308,10 @@ t_expect_status () {
     return
   fi
   set +x
-  >&2 echo "expect_status failed"
-  >&2 _inl "$1"
-  >&2 echo " actual   $actual"
-  >&2 echo " expected $expect"
+  _msg "expect_status failed"
+  _ind "$1"
+  _msg " actual   $actual"
+  _msg " expected $expect"
   [ "$_t_OPT_DEBUG" ] && set -x
   exit 1
 }
@@ -293,12 +324,12 @@ t_expect_output () {
     return
   fi
   set +x
-  >&2 echo "expect_output failed"
-  >&2 _inl "$1"
-  >&2 echo " actual"
-  >&2 _inl "$actual"
-  >&2 echo " expected"
-  >&2 _inl "$expect"
+  _msg "expect_output failed"
+  _ind "$1"
+  _msg " actual"
+  _ind "$actual"
+  _msg " expected"
+  _ind "$expect"
   [ "$_t_OPT_DEBUG" ] && set -x
   exit 1
 }
@@ -311,14 +342,14 @@ t_expect_value () {
     return
   fi
   set +x
-  >&2 echo "expect_value failed"
-  >&2 _inl "$1"
+  _msg "expect_value failed"
+  _ind "$1"
   if ! [ "$1" = "$actual" ]; then
-    >&2 echo " actual"
-    >&2 _inl "$actual"
+    _msg " actual"
+    _ind "$actual"
   fi
-  >&2 echo " expected"
-  >&2 _inl "$expect"
+  _msg " expected"
+  _ind "$expect"
   [ "$_t_OPT_DEBUG" ] && set -x
   exit 1
 }
@@ -328,7 +359,7 @@ t_expect_value () {
 #
 
 if [ "$_t_SCRIPT" = tea.sh ]; then
-  _t_run_test_files "$@"
+  _t_run_test_files $@
 else
-  _t_run_test_functions "$@"
+  _t_run_test_functions $@
 fi

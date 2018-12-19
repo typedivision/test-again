@@ -141,19 +141,19 @@ test_script_opt_dv_is_the_same_as_d () {
 test_script_opt_default_deletes_tmpdir () {
   rm -rf $_t_TMP_DIR/ok_*
   test/cases/ok
-  t_expect_status "ls $_t_TMP_DIR/ok_*" 1 2>/dev/null
+  t_expect_status "test $(ls $_t_TMP_DIR/ok_* 2>/dev/null)" 1
 }
 
 test_script_opt_k_keeps_tmpdir () {
   rm -rf $_t_TMP_DIR/ok_*
   test/cases/ok -k
-  t_expect_status "ls $_t_TMP_DIR/ok_*" 0
+  t_expect_status "test $(ls $_t_TMP_DIR/ok_*)" 0
   rm -rf $_t_TMP_DIR/ok_*
 }
 
 test_script_opt_t_sets_tmpdir () {
   test/cases/ok -k -t "temp"
-  t_expect_status "ls $PWD/temp/ok_*" 0
+  t_expect_status "test $(ls $PWD/temp/ok_*)" 0
   rm -rf "$PWD/temp"
 }
 
@@ -164,6 +164,7 @@ test_script_opt_t_sets_tmpdir () {
 test_properties_are_available () {
   t_expect_value '$t_TEST_FILE' "test/suite"
   t_expect_value '$t_TEST_NAME' "test_properties_are_available"
+  t_expect_value '$t_TEST_NUM' 23
   t_expect_value '$t_BASE_DIR' "$PWD"
   t_expect_value '$t_BASE_TMP' "$PWD/tmp/suite_$$"
   t_expect_value '$t_TEST_TMP' "$PWD/tmp/suite_$$/test_properties_are_available"
@@ -201,103 +202,48 @@ test_script_exits_1_for_failing_test () {
 # testcases
 #
 
-case_output () {
-  sed -n 's/#) //p' "$1"
+test_case_changed_working_dirs () {
+  t_subtest test/cases/change_dirs
 }
 
-test_case_change_dirs () {
-  local test=test/cases/change_dirs
-  t_expect_output $test "$(case_output $test)"
+test_case_fail_in_setup () {
+  t_subtest test/cases/fail_in_setup
 }
 
-test_case_exit_fail_in_setup () {
-  local test=test/cases/exit_fail_in_setup
-  t_expect_output $test "$(case_output $test)"
+test_case_fail_in_test () {
+  t_subtest test/cases/fail_in_test
 }
 
-test_case_return_fail_in_setup () {
-  local test=test/cases/return_fail_in_setup
-  t_expect_output $test "$(case_output $test)"
-}
-
-test_case_trap_fail_in_setup () {
-  local test=test/cases/trap_fail_in_setup
-  t_expect_output $test "$(case_output $test)"
-}
-
-test_case_exit_fail_in_test () {
-  local test=test/cases/exit_fail_in_test
-  t_expect_output $test "$(case_output $test)"
-}
-
-test_case_trap_fail_in_test () {
-  local test=test/cases/trap_fail_in_test
-  t_expect_output $test "$(case_output $test)"
-}
-
-test_case_exit_fail_in_test_after_untrap () {
-  local test=test/cases/exit_fail_in_test_after_untrap
-  t_expect_output $test "$(case_output $test)"
-}
-
-test_case_exit_fail_in_teardown () {
-  local test=test/cases/exit_fail_in_teardown
-  t_expect_output $test "$(case_output $test)"
-}
-
-test_case_return_fail_in_teardown () {
-  local test=test/cases/return_fail_in_teardown
-  t_expect_output $test "$(case_output $test)"
-}
-
-test_case_trap_fail_in_teardown () {
-  local test=test/cases/trap_fail_in_teardown
-  t_expect_output $test "$(case_output $test)"
+test_case_fail_in_teardown () {
+  t_subtest test/cases/fail_in_teardown
 }
 
 test_case_fail () {
-  local test=test/cases/fail
-  t_expect_output "$test 2>&1" "$(case_output $test)"
+  t_subtest test/cases/fail
 }
 
 test_case_pass () {
-  local test=test/cases/pass
-  t_expect_output $test "$(case_output $test)"
+  t_subtest test/cases/pass
 }
 
 test_case_skip () {
-  local test=test/cases/skip
-  t_expect_output $test "$(case_output $test)"
+  t_subtest test/cases/skip
 }
 
 test_case_bailout () {
-  local test=test/cases/bailout
-  t_expect_output $test "$(case_output $test)"
+  t_subtest test/cases/bailout
 }
 
 test_case_call () {
-  local test=test/cases/call
-  t_expect_output $test "$(case_output $test)"
+  t_subtest test/cases/call
 }
 
 test_case_subtest () {
-  local test=test/cases/subtest
-  t_expect_output "$test 2>/dev/null" "$(case_output $test)"
+  t_subtest test/cases/subtest
 }
 
 test_case_test_detection () {
-  local test=test/cases/test_detection
-  t_expect_output $test "$(case_output $test)"
-}
-
-test_case_public_function_conflict () {
-  local test=test/cases/public_function_conflict
-  t_expect_output $test "$(case_output $test)"
-}
-
-test_case_undeclared_variable () {
-  local test=test/cases/undeclared_variable
-  t_expect_output "$test" "$(case_output $test)" 2>/dev/null
+  t_subtest test/cases/test_detection
 }
 
 #

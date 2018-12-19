@@ -12,7 +12,7 @@ format using `tea.sh` as command.
 ## test script files
 
 The `tea.sh` command runs script files defining the test cases.
-Test scripts have the form of this `example_test` file:
+Test scripts have the form of this `test_script` file:
 ```
 #!/usr/bin/env sh          # bash, dash or busybox ash
 
@@ -42,12 +42,12 @@ test_status_of_prog () {   # every test runs as t_setup, test_*, t_teardown
 
 To run the tests, use any of
 ```
-tea.sh example_test [...]  # run the example_test (and optionally more files)
-./example_test             # run the example_test file as a single test
-./example_test test_true   # run a single test function from example_test
+tea.sh test_script [...]   # run the test_script (and optionally more files)
+./test_script              # run the test_script file as a single test
+./test_script test_true    # run a single test function from test_script
 ```
 
-The output of the `example_test` is
+The output of the `test_script` is
 ```
 1..2
 ok 1 test_true
@@ -68,7 +68,7 @@ not ok 2 test_status_of_prog
 ## options
 
 ```
-usage: tea.sh [-h|-l|-dikv] [-t <tmp-dir>] [<test-file>...]
+usage: tea.sh [-h|-l|-dikv] [-t <tmp-dir>] [<script>...]
 
 options:
 
@@ -91,7 +91,7 @@ t_skip [<reason>]      # skip the test with optional reason
 t_bailout [<reason>]   # abort the test execution
 t_subtest <file>       # run script file as subtest
 
-t_call <cmd>           # run <command> and save result in
+t_call <cmd> <args>    # run <command> and save result in
                        # t_STATUS and t_OUTPUT
 
 t_expect_status <cmd> <status>   # compare <command> exit code with <status>
@@ -100,6 +100,7 @@ t_expect_value '<exp>' <value>   # compare <expression> and <value>
 
 t_TEST_FILE            # the file name of the currently running test
 t_TEST_NAME            # the actual test name (= test function name)
+t_TEST_NUM             # the actual test number
 t_BASE_DIR             # the shell working dir when calling the test script
 t_BASE_TMP             # a temparary test base dir under <tmp-dir>
 t_TEST_TMP             # a temparary test dir under t_BASE_DIR

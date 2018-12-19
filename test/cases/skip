@@ -1,15 +1,43 @@
 #!/usr/bin/env sh
 
-test_skip_no_reason () {
+create () {
+  {
+    echo "#!/usr/bin/env sh"
+    cat
+    echo ". bin/tea.sh"
+  } > $t_TEST_TMP/$1
+  chmod +x $t_TEST_TMP/$1
+}
+
+call_test () {
+  t_call env -i $t_TEST_TMP/$1 test
+  t_expect_value '$t_CALL_STATUS' 0
+  t_expect_value '$t_CALL_OUTPUT' "$2"
+}
+
+test_skip_without_reason () {
+  local script=${t_TEST_NAME#*_}
+  create $script <<EOF
+test () {
   t_skip
 }
-#) 1..2
-#) ok 1 test_skip_no_reason # skip
+EOF
+  call_test $script "\
+1..1
+ok 1 test # skip"
+}
 
 test_skip_with_reason () {
+  local script=${t_TEST_NAME#*_}
+  create $script <<EOF
+test () {
   t_skip "Skipping..."
 }
-#) ok 2 test_skip_with_reason # skip Skipping...
+EOF
+  call_test $script "\
+1..1
+ok 1 test # skip Skipping..."
+}
 
 . test/helper
 . tea.sh

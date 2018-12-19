@@ -1,0 +1,57 @@
+#!/usr/bin/env sh
+
+call_test () {
+  local script=${t_TEST_NAME#*_}
+  {
+    echo "#!/usr/bin/env sh"
+    cat
+    echo ". bin/tea.sh"
+  } > $t_TEST_TMP/$script
+  chmod +x $t_TEST_TMP/$script
+
+  t_call env -i $t_TEST_TMP/$script test
+  t_expect_value '$t_CALL_STATUS' 1
+  t_expect_value '$t_CALL_OUTPUT' "\
+1..1
+not ok 1 test"
+}
+
+test_exit_fail_in_teardown () {
+  call_test <<EOF
+t_teardown () {
+  exit 1
+}
+
+test () {
+  return
+}
+EOF
+}
+
+test_return_fail_in_teardown () {
+  call_test <<EOF
+t_teardown () {
+  return 1
+}
+
+test () {
+  return
+}
+EOF
+}
+
+test_trap_fail_in_teardown () {
+  call_test <<EOF
+t_teardown () {
+  false
+  return 0
+}
+
+test () {
+  return
+}
+EOF
+}
+
+. test/helper
+. tea.sh

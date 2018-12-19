@@ -1,13 +1,60 @@
 #!/usr/bin/env sh
 
-test_bailout () {
+create () {
+  {
+    echo "#!/usr/bin/env sh"
+    cat
+    echo ". bin/tea.sh"
+  } > $t_TEST_TMP/$1
+  chmod +x $t_TEST_TMP/$1
+}
+
+call_test () {
+  t_call env -i $t_TEST_TMP/$1 "_test.*"
+  t_expect_value '$t_CALL_STATUS' 0
+  t_expect_value '$t_CALL_OUTPUT' "$2"
+}
+
+test_bailout_without_reason () {
+  local script=${t_TEST_NAME#*_}
+  create $script <<EOF
+_test_before_bailout () {
+  return
+}
+
+_test_bailout () {
+  t_bailout
+}
+
+_test_after_bailout () {
+  return
+}
+EOF
+  call_test $script "\
+1..3
+ok 1 _test_before_bailout
+bail out!"
+}
+
+test_bailout_with_reason () {
+  local script=${t_TEST_NAME#*_}
+  create $script <<EOF
+_test_before_bailout () {
+  return
+}
+
+_test_bailout () {
   t_bailout "tests aborted"
 }
-#) 1..2
-#) bail out! tests aborted
 
-test_after_bailout () {
+_test_after_bailout () {
   return
+}
+EOF
+  call_test $script "\
+1..3
+ok 1 _test_before_bailout
+bail out! tests aborted"
 }
 
 . test/helper

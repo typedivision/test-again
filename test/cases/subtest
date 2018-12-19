@@ -1,49 +1,88 @@
 #!/usr/bin/env sh
 
-test_pass () {
-  true
+create () {
+  {
+    echo "#!/usr/bin/env sh"
+    cat
+    echo ". bin/tea.sh"
+  } > $t_TEST_TMP/$1
+  chmod +x $t_TEST_TMP/$1
 }
-#) 1..6
-#) ok 1 test_pass
+
+call_test () {
+  t_call --errout env -i $t_TEST_TMP/$1 test
+  t_expect_value '$t_CALL_STATUS' $2
+  t_expect_value '$t_CALL_OUTPUT' "$3"
+}
 
 test_subtest_pass () {
+  local script=${t_TEST_NAME#*_}
+  create $script <<EOF
+test () {
   t_subtest test/cases/ok
 }
-#)     1..1
-#)     ok 1 test_pass
-#) ok 2 test_subtest_pass
+EOF
+  call_test $script 0 "\
+1..1
+    1..1
+    ok 1 test_pass
+ok 1 test"
+}
 
 test_subtest_fail () {
+  local script=${t_TEST_NAME#*_}
+  create $script <<EOF
+test () {
   t_subtest test/cases/not_ok
 }
-#)     1..1
-#)     not ok 1 test_fail
-#) not ok 3 test_subtest_fail
+EOF
+  call_test $script 1 "\
+1..1
+    1..1
+    not ok 1 test_fail
+not ok 1 test"
+}
 
 test_subtest_mixed_pass_fail () {
+  local script=${t_TEST_NAME#*_}
+  create $script <<EOF
+test () {
   t_subtest test/cases/abc
 }
-#)     1..4
-#)     ok 1 test_a
-#)     ok 2 test_b
-#)     not ok 3 test_c
-#)     ok 4 test_s # skip s
-#) not ok 4 test_subtest_mixed_pass_fail
+EOF
+  call_test $script 1 "\
+1..1
+    1..4
+    # A
+    ok 1 test_a
+    # B
+    ok 2 test_b
+    # C
+    not ok 3 test_c
+    ok 4 test_s # skip s
+not ok 1 test"
+}
 
 test_subsubtest () {
+  local script=${t_TEST_NAME#*_}
+  create $script <<EOF
+test () {
   t_subtest test/cases/subsubtest
 }
-#)     1..2
-#)         1..1
-#)         ok 1 test_pass
-#)     ok 1 test_pass
-#)     not ok 2 test_fail
-#) not ok 5 test_subsubtest
-
-test_subtest_pass_2 () {
-  true
+EOF
+  call_test $script 1 "\
+1..1
+    1..2
+        1..1
+        ok 1 test_pass
+    ok 1 test_pass
+    # expect_value failed
+    #   a
+    #  expected
+    #   b
+    not ok 2 test_fail
+not ok 1 test"
 }
-#) ok 6 test_subtest_pass_2
 
 . test/helper
 . tea.sh

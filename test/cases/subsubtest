@@ -5,7 +5,7 @@ test_pass () {
 }
 
 test_fail () {
-  t_expect_status true 1
+  t_expect_value a b
 }
 
 . test/helper

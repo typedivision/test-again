@@ -24,41 +24,34 @@ test_call_ok () {
   t_expect_value $t_CALL_STATUS 0
   t_expect_value '$t_CALL_OUTPUT' "prog ok"
 }
-#) 1..6
-#) ok 1 test_call_ok
 
 test_call_failing () {
   t_call prog_fail
   t_expect_value $t_CALL_STATUS 2
   t_expect_value '$t_CALL_OUTPUT' "prog fail"
 }
-#) ok 2 test_call_failing
 
 test_call_trapped () {
   t_call prog_trap
   t_expect_value $t_CALL_STATUS 1
   t_expect_value '$t_CALL_OUTPUT' "prog trap"
 }
-#) ok 3 test_call_trapped
 
 test_call_param () {
   t_call prog_param "message"
   t_expect_value $t_CALL_STATUS 0
   t_expect_value '$t_CALL_OUTPUT' "prog message"
 }
-#) ok 4 test_call_param
 
 test_call_not_found () {
   t_call prog_missing 2>/dev/null
   t_expect_value $t_CALL_STATUS 127
 }
-#) ok 5 test_call_not_found
 
 test_call_cleans_state () {
   t_expect_value $t_CALL_STATUS ""
   t_expect_value '$t_CALL_OUTPUT' ""
 }
-#) ok 6 test_call_cleans_state
 
 . test/helper
 . tea.sh

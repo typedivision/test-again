@@ -1,7 +1,15 @@
 #!/bin/bash
 
 mkdir -p tmp/distributions
-while read os shells; do
+
+{
+  if [ "$1" ] && [ "$2" ]; then
+    echo $1 $2
+  else
+    echo "alpine /bin/bash /usr/bin/dash /bin/busybox"
+    echo "debian /bin/bash /bin/dash /bin/busybox"
+  fi
+} | while read os shells; do
   image=ts_$os
   outfile=tmp/distributions/$image.buildlog
 
@@ -24,7 +32,4 @@ EOF
     } | tee $outfile
     echo
   done
-done <<EOF
-alpine /bin/bash /usr/bin/dash /bin/busybox
-debian /bin/bash /bin/dash /bin/busybox
-EOF
+done
