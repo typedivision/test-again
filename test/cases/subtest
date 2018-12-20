@@ -10,7 +10,7 @@ create () {
 }
 
 call_test () {
-  t_call --errout env -i $t_TEST_TMP/$1 test
+  t_call -errout env -i $t_TEST_TMP/$1 test
   t_expect_value '$t_CALL_STATUS' $2
   t_expect_value '$t_CALL_OUTPUT' "$3"
 }

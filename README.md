@@ -4,10 +4,8 @@ runs shell script functions as tests
 ====================================
 
 **test-again** comes as a shell script to run functions of script files as tests
-for any kind of programs.
-
-The test script files can be run individually or in a batch format using
-**test-again** as command.
+for any kind of programs. The test script files can be run individually or in a
+batch format using **test-again** as command.
 
 **test-again** generates [TAP](http://testanything.org/) compliant output.
 
@@ -16,7 +14,7 @@ The test script files can be run individually or in a batch format using
 The `test-again` command runs script files defining the test cases.
 Test scripts have the form of this `test_script` file:
 ```
-#!/usr/bin/env sh          # bash, dash or busybox ash
+#!/usr/bin/env sh          # works with bash, dash or busybox ash
 
 STORE=/tmp/results         # define variables like in any other shell script
 
@@ -85,16 +83,19 @@ options:
 ## test-again functions and properties
 
 ```
-t_setup                   # test setup step
-t_teardown                # test teardown step
+t_setup                   # test setup step called before each test
+t_teardown                # test teardown step called after each test
+
+t_setup_once              # setup step called once before all tests
+t_teardown_once           # teardown step called once after all tests
 
 t_skip [<reason>]         # skip the test with optional reason
 t_bailout [<reason>]      # abort the test execution
 t_subtest <file>          # run script file as subtest
 
-t_call [--errout] <cmd>   # run <command> and save result in
+t_call [-errout] <cmd>    # run <command> and save result in
                           # t_STATUS and t_OUTPUT
-                          # --errout includes stderr
+                          # -errout includes stderr
 
 t_expect_status <cmd> <status>   # compare <command> exit code with <status>
 t_expect_output <cmd> <output>   # compare <command> stdout with <output>

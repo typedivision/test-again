@@ -9,7 +9,7 @@ call_test () {
   } > $t_TEST_TMP/$script
   chmod +x $t_TEST_TMP/$script
 
-  t_call --errout env -i $t_TEST_TMP/$script test
+  t_call -errout env -i $t_TEST_TMP/$script test
   t_expect_value '$t_CALL_STATUS' 1
   t_expect_value '$t_CALL_OUTPUT' "\
 1..1

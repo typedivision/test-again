@@ -13,57 +13,73 @@ call_test () {
   t_expect_value '$t_CALL_STATUS' 1
   t_expect_value '$t_CALL_OUTPUT' "\
 1..1
+# in setup once
 # in setup
+# in test
 # in teardown
-not ok 1 test"
+ok 1 test
+# in teardown once
+error! teardown once failed"
 }
 
-test_exit_fail_in_setup () {
+test_exit_fail_in_teardown_once () {
   call_test <<EOF
+t_setup_once () {
+  >&2 echo "in setup once"
+}
 t_setup () {
   >&2 echo "in setup"
+}
+t_teardown_once () {
+  >&2 echo "in teardown once"
   exit 1
 }
-
 t_teardown () {
   >&2 echo "in teardown"
 }
-
 test () {
   >&2 echo "in test"
 }
 EOF
 }
 
-test_return_fail_in_setup () {
+test_return_fail_in_teardown_once () {
   call_test <<EOF
+t_setup_once () {
+  >&2 echo "in setup once"
+}
 t_setup () {
   >&2 echo "in setup"
+}
+t_teardown_once () {
+  >&2 echo "in teardown once"
   return 1
 }
-
 t_teardown () {
   >&2 echo "in teardown"
 }
-
 test () {
   >&2 echo "in test"
 }
 EOF
 }
 
-test_trap_fail_in_setup () {
+test_trap_fail_in_teardown_once () {
   call_test <<EOF
+t_setup_once () {
+  >&2 echo "in setup once"
+}
 t_setup () {
   >&2 echo "in setup"
+}
+t_teardown_once () {
+  >&2 echo "in teardown once"
   false
   return 0
 }
-
 t_teardown () {
   >&2 echo "in teardown"
 }
-
 test () {
   >&2 echo "in test"
 }

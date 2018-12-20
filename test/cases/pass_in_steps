@@ -1,0 +1,57 @@
+#!/usr/bin/env sh
+
+call_test () {
+  local script=${t_TEST_NAME#*_}
+  {
+    echo "#!/usr/bin/env sh"
+    cat
+    echo ". bin/test-again"
+  } > $t_TEST_TMP/$script
+  chmod +x $t_TEST_TMP/$script
+
+  t_call -errout env -i $t_TEST_TMP/$script "_test.*"
+  t_expect_value '$t_CALL_STATUS' 0
+  t_expect_value '$t_CALL_OUTPUT' "\
+1..2
+# in setup once
+# in setup
+# in test a
+# in teardown
+ok 1 _test_a
+# in setup
+# in test b
+# in teardown
+ok 2 _test_b
+# in teardown once"
+}
+
+test_pass_in_all_steps () {
+  call_test <<EOF
+t_setup_once () {
+  >&2 echo "in setup once"
+}
+
+t_setup () {
+  >&2 echo "in setup"
+}
+
+t_teardown_once () {
+  >&2 echo "in teardown once"
+}
+
+t_teardown () {
+  >&2 echo "in teardown"
+}
+
+_test_a () {
+  >&2 echo "in test a"
+}
+
+_test_b () {
+  >&2 echo "in test b"
+}
+EOF
+}
+
+. test/helper
+. test-again

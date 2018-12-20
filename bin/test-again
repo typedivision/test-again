@@ -57,7 +57,7 @@ shift $((OPTIND - 1))
 
 _t_TOP_DIR="$PWD"
 
-# export command options to test file and subtest runs
+# export command options to test scripts and subtest runs
 export _t_TMP_DIR="${_t_OPT_TMP_DIR:-$_t_TOP_DIR/tmp}"
 export _t_OPT_DEBUG="${_t_OPT_DEBUG:-}"
 export _t_OPT_KEEP_TMP="${_t_OPT_KEEP_TMP:-}"
@@ -76,6 +76,11 @@ _t_list () {
   local test_pattern=$(printf "$*" | tr " " "|")
   grep -onE "^[[:space:]]*(${test_pattern:-test_\w+})[[:space:]]*\(\)" /dev/null "$file" |
   sed -e 's/^\([^:]*\):\([0-9]\{1,\}\):[[:space:]]*\([^ (]\{1,\}\).*/\3 \1:\2/'
+}
+
+# Helper function to print output as diag lines.
+_t_diag_line () {
+  sed "s/^/$_t_SUB_INDENT# /" >&2
 }
 
 # Runs a specific test.
@@ -108,8 +113,27 @@ _t_run_test () {
   return $exit_status
 }
 
-# Runs a test file or selected tests from it, when given as option.
-_t_run_test_functions () {
+# Runs test step once.
+_t_run_step_once () {
+  if [ "$_t_OPT_VERB" ]; then
+    exec 1>&2
+  else
+    exec 1>/dev/null
+  fi
+  # input /dev/null so that tests which read from stdin will not hang
+  exec </dev/null
+
+  if [ "$_t_OPT_DEBUG" ]; then
+    set -eux
+  else
+    set -eu
+  fi
+
+  t_${1}_once
+}
+
+# Runs a test script or selected tests from it, when given as option.
+_t_run_test_steps () {
   local test_file="$0"
   local test_case="${test_file##*/}"
   test_case="${test_case%\.*}"
@@ -129,13 +153,30 @@ _t_run_test_functions () {
   if ! [ "$_t_OPT_LIST" ]; then
     >&3 echo "$_t_SUB_INDENT$test_cnt..$test_plan"
   fi
+
+  mkdir -p "$case_dir"
+  if ! [ "$_t_OPT_LIST" ]; then
+    (
+      (_t_run_step_once setup)
+      [ $? -eq 0 ] || touch "$case_dir"/.fatal
+    ) 2>&1 | _t_diag_line
+
+    if [ -e "$case_dir"/.fatal ]; then
+      >&2 echo "${_t_SUB_INDENT}error! setup once failed"
+      (_t_run_step_once teardown) 2>&1 | _t_diag_line
+      if ! [ "$_t_OPT_KEEP_TMP" ]; then
+        rm -rf "$case_dir"
+      fi
+      return 1
+    fi
+  fi
+
   _t_list "$test_file" "$@" |
   while read test_name test_desc; do
     if [ "$_t_OPT_LIST" ]; then
       >&3 echo "[$test_desc] $test_name"
       continue
     fi
-
     export t_TEST_FILE=$test_file
     export t_TEST_NAME=$test_name
     export t_TEST_NUM=$test_cnt
@@ -150,35 +191,34 @@ _t_run_test_functions () {
       if [ "$_t_OPT_VERB" ]; then
         echo "$test_name [$test_desc]"
       fi
-      # run the test by calling back into the test file
+      # run the test by calling back into the test script
       # use a subprocess to prevent leakage (eg set -x)
       # a zero exit status is considered a pass, otherwise fail
       (_t_run_test)
-      [ $? -eq 0 ] || touch "$t_TEST_TMP"/fail
+      [ $? -eq 0 ] || touch "$t_TEST_TMP"/.fail
+    ) 2>&1 | _t_diag_line
 
-    ) 2>&1 | sed "s/^/$_t_SUB_INDENT# /" >&2
-
-    if [ -e "$t_TEST_TMP"/subtest ]; then
-      local subtest=$(cat "$t_TEST_TMP"/subtest)
+    if [ -e "$t_TEST_TMP"/.subtest ]; then
+      local subtest=$(cat "$t_TEST_TMP"/.subtest)
       (
         _t_SUB_INDENT="    $_t_SUB_INDENT"
         $subtest
-        [ $? -eq 0 ] || touch "$t_TEST_TMP"/fail
+        [ $? -eq 0 ] || touch "$t_TEST_TMP"/.fail
       )
     fi
 
-    if [ -e "$t_TEST_TMP"/bail ]; then
-      local reason="$(cat "$t_TEST_TMP"/bail)"
+    if [ -e "$t_TEST_TMP"/.bail ]; then
+      local reason="$(cat "$t_TEST_TMP"/.bail)"
       [ "$reason" ] && reason=" $reason"
       >&3 echo "bail out!$reason"
       exit 1
-    elif [ -e "$t_TEST_TMP"/skip ]; then
-      local reason="$(cat "$t_TEST_TMP"/skip)"
+    elif [ -e "$t_TEST_TMP"/.skip ]; then
+      local reason="$(cat "$t_TEST_TMP"/.skip)"
       [ "$reason" ] && reason=" $reason"
       status="ok $test_cnt $test_name # skip$reason"
-    elif [ -e "$t_TEST_TMP"/fail ]; then
+    elif [ -e "$t_TEST_TMP"/.fail ]; then
       status="not ok $test_cnt $test_name"
-      touch "$case_dir"/fail
+      touch "$case_dir"/.fail
     else
       status="ok $test_cnt $test_name"
     fi
@@ -187,8 +227,16 @@ _t_run_test_functions () {
     test_cnt=$((test_cnt + 1))
   done
 
+  (
+    (_t_run_step_once teardown)
+    [ $? -eq 0 ] || touch "$case_dir"/.fatal
+  ) 2>&1 | _t_diag_line
+
   local result=0
-  if [ -e "$case_dir"/fail ]; then
+  if [ -e "$case_dir"/.fatal ]; then
+    >&2 echo "${_t_SUB_INDENT}error! teardown once failed"
+    result=1
+  elif [ -e "$case_dir"/.fail ]; then
     result=1
   fi
   if ! [ "$_t_OPT_LIST" ] && ! [ "$_t_OPT_KEEP_TMP" ]; then
@@ -197,8 +245,8 @@ _t_run_test_functions () {
   return $result
 }
 
-# Runs multipe test files given as 'test-again' arguments.
-_t_run_test_files () {
+# Runs multipe test scripts given as 'test-again' arguments.
+_t_run_test_scripts () {
   local error
   for test_file in "$@"; do
     if [ -f "$test_file" ]; then
@@ -209,12 +257,12 @@ _t_run_test_files () {
           "$test_file"
         fi
       else
-        echo "error: $test_file not executable"
+        echo "error! $test_file not executable"
         error=1
         continue
       fi
     else
-      echo "error: $test_file not a file"
+      echo "error! $test_file not a file"
       error=1
       continue
     fi
@@ -240,40 +288,50 @@ _ind () {
 # public functions
 #
 
-# Optional test setup step.
+# Optional setup step before each test run.
 if ! type "t_setup" >/dev/null 2>&1; then
 t_setup () { return; }
 fi
 
-# Optional test teardown step.
+# Optional teardown after each test run.
 if ! type "t_teardown" >/dev/null 2>&1; then
 t_teardown () { return; }
+fi
+
+# Optional setup step before all tests run.
+if ! type "t_setup_once" >/dev/null 2>&1; then
+t_setup_once () { return; }
+fi
+
+# Optional teardown step after all tests run.
+if ! type "t_teardown_once" >/dev/null 2>&1; then
+t_teardown_once () { return; }
 fi
 
 # Skip this test with optional reason.
 t_skip () {
   local reason="${1:-}"
-  printf "$reason\n" > "$t_TEST_TMP"/skip
+  printf "$reason\n" > "$t_TEST_TMP"/.skip
   exit 0
 }
 
 # Abort the test run with optional reason.
 t_bailout () {
   local reason="${1:-}"
-  printf "$reason\n" > "$t_TEST_TMP"/bail
+  printf "$reason\n" > "$t_TEST_TMP"/.bail
   exit 1
 }
 
-# Run a test file as subtest.
+# Run a test script as subtest.
 t_subtest () {
-  printf "$1\n" > "$t_TEST_TMP"/subtest
+  printf "$1\n" > "$t_TEST_TMP"/.subtest
   exit
 }
 
 # Call a program/function and save output and status.
 t_call () {
   set +x
-  if [ "$1" = --errout ]; then
+  if [ "$1" = -errout ]; then
     local errout=1
     shift
   fi
@@ -354,11 +412,11 @@ t_expect_value () {
 }
 
 #
-# Run the given test files or this script as single suite.
+# Run the given test scripts or this script as single suite.
 #
 
 if [ "$_t_CMD" = test-again ]; then
-  _t_run_test_files $@
+  _t_run_test_scripts $@
 else
-  _t_run_test_functions $@
+  _t_run_test_steps $@
 fi
