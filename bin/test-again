@@ -273,12 +273,12 @@ _t_run_test_scripts () {
 }
 
 # Helper function for printing messages on stderr.
-_msg () {
+_t_msg () {
   >&2 echo "$1"
 }
 
 # Helper function for expect indention for multi lines.
-_ind () {
+_t_ind () {
   {
     echo "$1" | sed "s/^/  /"
   } >&2
@@ -365,10 +365,10 @@ t_expect_status () {
     return
   fi
   set +x
-  _msg "expect_status failed"
-  _ind "$1"
-  _msg " actual   $actual"
-  _msg " expected $expect"
+  _t_msg "expect_status failed"
+  _t_ind "$1"
+  _t_msg " actual   $actual"
+  _t_msg " expected $expect"
   [ "$_t_OPT_DEBUG" ] && set -x
   exit 1
 }
@@ -381,12 +381,12 @@ t_expect_output () {
     return
   fi
   set +x
-  _msg "expect_output failed"
-  _ind "$1"
-  _msg " actual"
-  _ind "$actual"
-  _msg " expected"
-  _ind "$expect"
+  _t_msg "expect_output failed"
+  _t_ind "$1"
+  _t_msg " actual"
+  _t_ind "$actual"
+  _t_msg " expected"
+  _t_ind "$expect"
   [ "$_t_OPT_DEBUG" ] && set -x
   exit 1
 }
@@ -399,16 +399,33 @@ t_expect_value () {
     return
   fi
   set +x
-  _msg "expect_value failed"
-  _ind "$1"
+  _t_msg "expect_value failed"
+  _t_ind "$1"
   if ! [ "$1" = "$actual" ]; then
-    _msg " actual"
-    _ind "$actual"
+    _t_msg " actual"
+    _t_ind "$actual"
   fi
-  _msg " expected"
-  _ind "$expect"
+  _t_msg " expected"
+  _t_ind "$expect"
   [ "$_t_OPT_DEBUG" ] && set -x
   exit 1
+}
+
+# BDD style test comments.
+t_given () {
+  _t_msg "GIVEN $1"
+}
+
+t_when () {
+  _t_msg "WHEN  $1"
+}
+
+t_and () {
+  _t_msg "AND   $1"
+}
+
+t_then () {
+  _t_msg "THEN  $1"
 }
 
 #

@@ -1,0 +1,39 @@
+#!/usr/bin/env sh
+
+call_test () {
+  local script=${t_TEST_NAME#*_}
+  {
+    echo "#!/usr/bin/env sh"
+    cat
+    echo ". bin/test-again"
+  } > $t_TEST_TMP/$script
+  chmod +x $t_TEST_TMP/$script
+
+  t_call -errout env -i $t_TEST_TMP/$script test
+  t_expect_value '$t_CALL_STATUS' 0
+  t_expect_value '$t_CALL_OUTPUT' "\
+1..1
+# GIVEN a strig
+# AND   a number
+# WHEN  calling printf
+# THEN  the result is the concatinated string
+ok 1 test"
+}
+
+test_bdd_messages () {
+  call_test <<'EOF'
+test () {
+  t_given "a strig"
+  local a="high"
+  t_and "a number"
+  local b=5
+  t_when "calling printf"
+  local c=$(printf "%s%d" $a $b)
+  t_then "the result is the concatinated string"
+  t_expect_value '$c' "high5"
+}
+EOF
+}
+
+. test/helper
+. test-again
