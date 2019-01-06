@@ -239,7 +239,7 @@ _t_run_test_steps () {
   elif [ -e "$case_dir"/.fail ]; then
     result=1
   fi
-  if ! [ "$_t_OPT_LIST" ] && ! [ "$_t_OPT_KEEP_TMP" ]; then
+  if ! [ "$_t_OPT_KEEP_TMP" ]; then
     rm -rf "$case_dir"
   fi
   return $result
