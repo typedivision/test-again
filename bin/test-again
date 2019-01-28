@@ -73,7 +73,7 @@ export _t_SUB_INDENT="${_t_SUB_INDENT:-}"
 _t_list () {
   local file="$1"
   shift
-  local test_pattern=$(printf "$*" | tr " " "|")
+  local test_pattern; test_pattern=$(printf "%s" "$*" | tr " " "|")
   grep -onE "^[[:space:]]*(${test_pattern:-test_\w+})[[:space:]]*\(\)" /dev/null "$file" |
   sed -e 's/^\([^:]*\):\([0-9]\{1,\}\):[[:space:]]*\([^ (]\{1,\}\).*/\3 \1:\2/'
 }
@@ -129,7 +129,7 @@ _t_run_step_once () {
     set -eu
   fi
 
-  t_${1}_once
+  "t_${1}_once"
 }
 
 # Runs a test script or selected tests from it, when given as option.
@@ -149,7 +149,7 @@ _t_run_test_steps () {
   exec 3>&1
 
   local test_cnt=1
-  local test_plan=$(_t_list "$test_file" "$@" | wc -l | xargs)
+  local test_plan; test_plan=$(_t_list "$test_file" "$@" | wc -l | xargs)
   if ! [ "$_t_OPT_LIST" ]; then
     >&3 echo "$_t_SUB_INDENT$test_cnt..$test_plan"
   fi
@@ -158,6 +158,7 @@ _t_run_test_steps () {
   if ! [ "$_t_OPT_LIST" ]; then
     (
       (_t_run_step_once setup)
+      # shellcheck disable=SC2181
       [ $? -eq 0 ] || touch "$case_dir"/.fatal
     ) 2>&1 | _t_diag_line
 
@@ -172,7 +173,7 @@ _t_run_test_steps () {
   fi
 
   _t_list "$test_file" "$@" |
-  while read test_name test_desc; do
+  while read -r test_name test_desc; do
     if [ "$_t_OPT_LIST" ]; then
       >&3 echo "[$test_desc] $test_name"
       continue
@@ -182,6 +183,7 @@ _t_run_test_steps () {
     export t_TEST_NUM=$test_cnt
     export t_BASE_DIR="$_t_TOP_DIR"
     export t_BASE_TMP="$case_dir"
+    # shellcheck disable=SC2030
     export t_TEST_TMP="$case_dir/$test_name"
     export t_CALL_STATUS=""
     export t_CALL_OUTPUT=""
@@ -195,25 +197,28 @@ _t_run_test_steps () {
       # use a subprocess to prevent leakage (eg set -x)
       # a zero exit status is considered a pass, otherwise fail
       (_t_run_test)
+      # shellcheck disable=SC2181
       [ $? -eq 0 ] || touch "$t_TEST_TMP"/.fail
     ) 2>&1 | _t_diag_line
 
     if [ -e "$t_TEST_TMP"/.subtest ]; then
-      local subtest=$(cat "$t_TEST_TMP"/.subtest)
+      local subtest; subtest=$(cat "$t_TEST_TMP"/.subtest)
       (
+        # shellcheck disable=SC2030
         _t_SUB_INDENT="    $_t_SUB_INDENT"
         $subtest
+        # shellcheck disable=SC2181
         [ $? -eq 0 ] || touch "$t_TEST_TMP"/.fail
       )
     fi
 
     if [ -e "$t_TEST_TMP"/.bail ]; then
-      local reason="$(cat "$t_TEST_TMP"/.bail)"
+      local reason; reason="$(cat "$t_TEST_TMP"/.bail)"
       [ "$reason" ] && reason=" $reason"
       >&3 echo "bail out!$reason"
       exit 1
     elif [ -e "$t_TEST_TMP"/.skip ]; then
-      local reason="$(cat "$t_TEST_TMP"/.skip)"
+      local reason; reason="$(cat "$t_TEST_TMP"/.skip)"
       [ "$reason" ] && reason=" $reason"
       status="ok $test_cnt $test_name # skip$reason"
     elif [ -e "$t_TEST_TMP"/.fail ]; then
@@ -223,17 +228,20 @@ _t_run_test_steps () {
       status="ok $test_cnt $test_name"
     fi
 
+    # shellcheck disable=SC2031
     >&3 echo "$_t_SUB_INDENT$status"
     test_cnt=$((test_cnt + 1))
   done
 
   (
     (_t_run_step_once teardown)
+    # shellcheck disable=SC2181
     [ $? -eq 0 ] || touch "$case_dir"/.fatal
   ) 2>&1 | _t_diag_line
 
   local result=0
   if [ -e "$case_dir"/.fatal ]; then
+    # shellcheck disable=SC2031
     >&2 echo "${_t_SUB_INDENT}error! teardown once failed"
     result=1
   elif [ -e "$case_dir"/.fail ]; then
@@ -311,20 +319,23 @@ fi
 # Skip this test with optional reason.
 t_skip () {
   local reason="${1:-}"
-  printf "$reason\n" > "$t_TEST_TMP"/.skip
+  # shellcheck disable=SC2031
+  printf "%s\n" "$reason" > "$t_TEST_TMP"/.skip
   exit 0
 }
 
 # Abort the test run with optional reason.
 t_bailout () {
   local reason="${1:-}"
-  printf "$reason\n" > "$t_TEST_TMP"/.bail
+  # shellcheck disable=SC2031
+  printf "%s\n" "$reason" > "$t_TEST_TMP"/.bail
   exit 1
 }
 
 # Run a test script as subtest.
 t_subtest () {
-  printf "$1\n" > "$t_TEST_TMP"/.subtest
+  # shellcheck disable=SC2031
+  printf "%s\n" "$1" > "$t_TEST_TMP"/.subtest
   exit
 }
 
@@ -338,11 +349,11 @@ t_call () {
   set +e
   if [ "${errout:-}" ]; then
     [ "$_t_OPT_DEBUG" ] && set -x
-    t_CALL_OUTPUT="$(set -e; $@ 2>&1)"
+    t_CALL_OUTPUT="$(set -e; "$@" 2>&1)"
     t_CALL_STATUS=$?
   else
     [ "$_t_OPT_DEBUG" ] && set -x
-    t_CALL_OUTPUT="$(set -e; $@)"
+    t_CALL_OUTPUT="$(set -e; "$@")"
     t_CALL_STATUS=$?
   fi
   set -e
@@ -350,8 +361,7 @@ t_call () {
 
 # Debug function to stop test execution.
 t_pause () {
-  local x
-  read x < /dev/tty
+  read -r _ < /dev/tty
 }
 
 # Assert, if status (exit code) of command is not equal to the expected output.
@@ -361,7 +371,7 @@ t_expect_status () {
   local actual=$?
   local expect="${2:-0}"
   set -e
-  if [ $actual = $expect ]; then
+  if [ $actual = "$expect" ]; then
     return
   fi
   set +x
@@ -375,7 +385,7 @@ t_expect_status () {
 
 # Assert, if std output of command is not equal to the expected output.
 t_expect_output () {
-  local actual="$(eval "$1")"
+  local actual; actual="$(eval "$1")" || true
   local expect="${2:-}"
   if [ "$actual" = "$expect" ]; then
     return
@@ -433,7 +443,7 @@ t_then () {
 #
 
 if [ "$_t_CMD" = test-again ]; then
-  _t_run_test_scripts $@
+  _t_run_test_scripts "$@"
 else
-  _t_run_test_steps $@
+  _t_run_test_steps "$@"
 fi
