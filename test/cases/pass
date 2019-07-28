@@ -12,42 +12,42 @@ test_pass_true () {
   true
 }
 
-test_pass_expect_status_true () {
-  t_expect_status true 0
+test_pass_expect_ret_true () {
+  t_expect_ret true 0
 }
 
-test_pass_expect_status_false () {
-  t_expect_status false 1
+test_pass_expect_ret_false () {
+  t_expect_ret false 1
 }
 
-test_pass_expect_output () {
-  t_expect_output 'echo "hello world"' "hello world"
+test_pass_expect_out () {
+  t_expect_out 'echo "hello world"' "hello world"
 }
 
-test_pass_expect_output_multiline () {
-  t_expect_output 'for i in hello world; do echo $i; done' "\
+test_pass_expect_out_multiline () {
+  t_expect_out 'for i in hello world; do echo $i; done' "\
 hello
 world"
 }
 
-test_pass_expect_value () {
-  t_expect_value 1 1
+test_pass_expect_eq () {
+  t_expect_eq 1 1
 }
 
-test_pass_expect_value_char () {
+test_pass_expect_eq_char () {
   local a="x"
-  t_expect_value '$a' x
+  t_expect_eq '$a' x
 }
 
-test_pass_expect_value_number () {
+test_pass_expect_eq_number () {
   local a=0
-  t_expect_value '$a' 0
+  t_expect_eq '$a' 0
 }
 
 test_pass_multiple_expects () {
-  t_expect_status true 0
-  t_expect_output "echo 0" "0"
-  t_expect_value  0 0
+  t_expect_ret true 0
+  t_expect_out "echo 0" "0"
+  t_expect_eq  0 0
 }
 
 . test-again

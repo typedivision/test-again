@@ -7,9 +7,9 @@ CASES=$TESTDIR/cases
 
 call_test () {
   _t_SUB_INDENT=""
-  t_call -errout $CASES/fail $t_TEST_NAME
-  t_expect_value '$t_CALL_STATUS' 1
-  t_expect_value '$t_CALL_OUTPUT' "$1"
+  t_call -perr $CASES/fail $t_TEST_NAME
+  t_expect_eq '$t_CALL_RET' 1
+  t_expect_eq '$t_CALL_OUT' "$1"
 }
 
 test_fail_exit () {
@@ -30,30 +30,30 @@ test_fail_trap () {
 not ok 1 $t_TEST_NAME"
 }
 
-test_fail_expect_status_true () {
+test_fail_expect_ret_true () {
   call_test "\
 1..1
-# expect_status failed
+# expect_ret failed
 #   true
 #  actual   0
 #  expected 1
 not ok 1 $t_TEST_NAME"
 }
 
-test_fail_expect_status_false () {
+test_fail_expect_ret_false () {
   call_test "\
 1..1
-# expect_status failed
+# expect_ret failed
 #   false
 #  actual   1
 #  expected 0
 not ok 1 $t_TEST_NAME"
 }
 
-test_fail_expect_output () {
+test_fail_expect_out () {
   call_test \
 '1..1
-# expect_output failed
+# expect_out failed
 #   echo "hello world"
 #  actual
 #   hello world
@@ -62,10 +62,10 @@ test_fail_expect_output () {
 not ok 1 '$t_TEST_NAME
 }
 
-test_fail_expect_output_multiline () {
+test_fail_expect_out_multiline () {
   call_test \
 '1..1
-# expect_output failed
+# expect_out failed
 #   for i in hello world; do echo $i; done
 #  actual
 #   hello
@@ -76,20 +76,20 @@ test_fail_expect_output_multiline () {
 not ok 1 '$t_TEST_NAME
 }
 
-test_fail_expect_value () {
+test_fail_expect_eq () {
   call_test "\
 1..1
-# expect_value failed
+# expect_eq failed
 #   1
 #  expected
 #   2
 not ok 1 $t_TEST_NAME"
 }
 
-test_fail_expect_value_char () {
+test_fail_expect_eq_char () {
   call_test \
 '1..1
-# expect_value failed
+# expect_eq failed
 #   $a
 #  actual
 #   x
@@ -98,10 +98,10 @@ test_fail_expect_value_char () {
 not ok 1 '$t_TEST_NAME
 }
 
-test_fail_expect_value_number () {
+test_fail_expect_eq_number () {
   call_test \
 '1..1
-# expect_value failed
+# expect_eq failed
 #   $a
 #  actual
 #   0
@@ -113,7 +113,7 @@ not ok 1 '$t_TEST_NAME
 test_multiple_expects_fail_early () {
   call_test "\
 1..1
-# expect_status failed
+# expect_ret failed
 #   true
 #  actual   0
 #  expected 1
@@ -123,7 +123,7 @@ not ok 1 $t_TEST_NAME"
 test_multiple_expects_fail_late () {
   call_test "\
 1..1
-# expect_status failed
+# expect_ret failed
 #   true
 #  actual   0
 #  expected 1

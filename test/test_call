@@ -25,36 +25,36 @@ prog_param () {
 
 test_call_ok () {
   t_call prog_ok
-  t_expect_value $t_CALL_STATUS 0
-  t_expect_value '$t_CALL_OUTPUT' "prog ok"
+  t_expect_eq $t_CALL_RET 0
+  t_expect_eq '$t_CALL_OUT' "prog ok"
 }
 
 test_call_failing () {
   t_call prog_fail
-  t_expect_value $t_CALL_STATUS 2
-  t_expect_value '$t_CALL_OUTPUT' "prog fail"
+  t_expect_eq $t_CALL_RET 2
+  t_expect_eq '$t_CALL_OUT' "prog fail"
 }
 
 test_call_trapped () {
   t_call prog_trap
-  t_expect_value $t_CALL_STATUS 1
-  t_expect_value '$t_CALL_OUTPUT' "prog trap"
+  t_expect_eq $t_CALL_RET 1
+  t_expect_eq '$t_CALL_OUT' "prog trap"
 }
 
 test_call_param () {
   t_call prog_param "message"
-  t_expect_value $t_CALL_STATUS 0
-  t_expect_value '$t_CALL_OUTPUT' "prog message"
+  t_expect_eq $t_CALL_RET 0
+  t_expect_eq '$t_CALL_OUT' "prog message"
 }
 
 test_call_not_found () {
   t_call prog_missing 2>/dev/null
-  t_expect_value $t_CALL_STATUS 127
+  t_expect_eq $t_CALL_RET 127
 }
 
 test_call_cleans_state () {
-  t_expect_value $t_CALL_STATUS ""
-  t_expect_value '$t_CALL_OUTPUT' ""
+  t_expect_eq $t_CALL_RET ""
+  t_expect_eq '$t_CALL_OUT' ""
 }
 
 . test-again

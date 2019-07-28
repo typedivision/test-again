@@ -8,7 +8,7 @@ test_bdd () {
   t_when "calling printf"
   local c=$(printf "%s%d" $a $b)
   t_then "the result is the concatinated string"
-  t_expect_value '$c' "high5"
+  t_expect_eq '$c' "high5"
 }
 
 . test-again

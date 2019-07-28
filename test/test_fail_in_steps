@@ -7,9 +7,9 @@ CASES=$TESTDIR/cases
 
 call_test () {
   _t_SUB_INDENT=""
-  t_call -errout $CASES/${t_TEST_NAME#test_}
-  t_expect_value '$t_CALL_STATUS' 1
-  t_expect_value '$t_CALL_OUTPUT' "$1"
+  t_call -perr $CASES/${t_TEST_NAME#test_}
+  t_expect_eq '$t_CALL_RET' 1
+  t_expect_eq '$t_CALL_OUT' "$1"
 }
 
 test_fail_in_setup_once_exit () {

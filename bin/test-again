@@ -5,32 +5,32 @@ _t_CMD="${0##*/}"
 # Prints usage message.
 _t_usage () {
   if [ "$_t_CMD" = test-again ]; then
-    local args="[<script>...]"
+    local args="[<script> ...]"
     local examples="\
-  test-again case_*    # run test functions of multiple scripts
-  case_a               # run test functions of a single script
-  case_a test_a        # run selected test function from script
+  test-again test_script ... # run test functions of one or more test scripts
+  test_script                # run test functions of a single test script
+  test_script test_case      # run selected test functions from test script
 "
   else
-    local args="[<test-function>...]"
+    local args="[<function> ...]"
     local examples="\
-  $_t_CMD                     # run all test functions
-  $_t_CMD <test_a>            # run a single test function
-  $_t_CMD <test_a> <test_b>   # run selected test functions
+  $_t_CMD                    # run all test functions
+  $_t_CMD <test_a>           # run a single test function
+  $_t_CMD <test_b> <test_c>  # run selected test functions
 "
   fi
   echo "\
-usage: $_t_CMD [-h|-l|-dkv] [-t <tmp-dir>] $args
+usage: $_t_CMD [-h|-l|-kvd] [-t <tmp-dir>] $args
 
 $examples
 options:
 
-  -d  debug output (print shell traces)
   -h  print this help
-  -k  keep (do not delete) the test dirs
   -l  list tests (don't run, just print)
-  -t  set the tmp dir path (default ./tmp)
+  -k  keep (do not delete) the test dirs
   -v  verbose output (print stdout)
+  -d  debug output (print shell traces)
+  -t  set the tmp dir path (default ./tmp)
 "
 }
 
@@ -185,8 +185,8 @@ _t_run_test_steps () {
     export t_BASE_TMP="$case_dir"
     # shellcheck disable=SC2030
     export t_TEST_TMP="$case_dir/$test_name"
-    export t_CALL_STATUS=""
-    export t_CALL_OUTPUT=""
+    export t_CALL_RET=""
+    export t_CALL_OUT=""
 
     mkdir -p "$t_TEST_TMP"
     (
@@ -342,19 +342,19 @@ t_subtest () {
 # Call a program/function and save output and status.
 t_call () {
   set +x
-  if [ "$1" = -errout ]; then
-    local errout=1
+  if [ "$1" = -perr ]; then
+    local perr=1
     shift
   fi
   set +e
-  if [ "${errout:-}" ]; then
+  if [ "${perr:-}" ]; then
     [ "$_t_OPT_DEBUG" ] && set -x
-    t_CALL_OUTPUT="$(set -e; "$@" 2>&1)"
-    t_CALL_STATUS=$?
+    t_CALL_OUT="$(set -e; "$@" 2>&1)"
+    t_CALL_RET=$?
   else
     [ "$_t_OPT_DEBUG" ] && set -x
-    t_CALL_OUTPUT="$(set -e; "$@")"
-    t_CALL_STATUS=$?
+    t_CALL_OUT="$(set -e; "$@")"
+    t_CALL_RET=$?
   fi
   set -e
 }
@@ -364,8 +364,8 @@ t_pause () {
   read -r _ < /dev/tty
 }
 
-# Assert, if status (exit code) of command is not equal to the expected output.
-t_expect_status () {
+# Assert, if return (exit) code of command is not equal to the expected output.
+t_expect_ret () {
   set +e
   (set -e; $1)
   local actual=$?
@@ -375,7 +375,7 @@ t_expect_status () {
     return
   fi
   set +x
-  _t_msg "expect_status failed"
+  _t_msg "expect_ret failed"
   _t_ind "$1"
   _t_msg " actual   $actual"
   _t_msg " expected $expect"
@@ -384,14 +384,14 @@ t_expect_status () {
 }
 
 # Assert, if std output of command is not equal to the expected output.
-t_expect_output () {
+t_expect_out () {
   local actual; actual="$(eval "$1")" || true
   local expect="${2:-}"
   if [ "$actual" = "$expect" ]; then
     return
   fi
   set +x
-  _t_msg "expect_output failed"
+  _t_msg "expect_out failed"
   _t_ind "$1"
   _t_msg " actual"
   _t_ind "$actual"
@@ -402,14 +402,14 @@ t_expect_output () {
 }
 
 # Assert, if value of expression is not equal to the expected value.
-t_expect_value () {
+t_expect_eq () {
   eval "local actual=\"$1\""
   local expect="${2:-}"
   if [ "$actual" = "$expect" ]; then
     return
   fi
   set +x
-  _t_msg "expect_value failed"
+  _t_msg "expect_eq failed"
   _t_ind "$1"
   if ! [ "$1" = "$actual" ]; then
     _t_msg " actual"
