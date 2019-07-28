@@ -1,6 +1,9 @@
 #!/bin/bash
+CMDPATH=$(cd "$(dirname $0)" && pwd)
+BASEDIR=$CMDPATH/../..
 
-mkdir -p tmp/distributions
+TMP=$BASEDIR/tmp/$(basename $0)
+mkdir -p $TMP
 
 {
   if [ "$1" ] && [ "$2" ]; then
@@ -11,23 +14,24 @@ mkdir -p tmp/distributions
   fi
 } | while read os shells; do
   image=ta_$os
-  outfile=tmp/distributions/$image.buildlog
+  outfile=$TMP/$image.buildlog
 
   echo "make $image..."
-  if docker build -t $image test/dockerfiles/$os >$outfile 2>&1; then
-    echo "success"
+  cd $CMDPATH/$os
+  if docker build -t $image . >$outfile 2>&1; then
+    echo "ok"
   else
-    echo "fail"
+    echo "failed"
     exit 1
   fi
 
   for shell in $shells; do
-    outfile=tmp/distributions/${image}_$(basename $shell)
+    outfile=$TMP/${image}_$(basename $shell)
     echo "test $image $shell..."
     {
-      docker run -i --rm -v $PWD:/tmp/ta -w /tmp/ta $image /bin/bash 2>&1 <<EOF
+      docker run -i --rm -v $BASEDIR:/ta -w /ta $image /bin/bash 2>&1 <<EOF
 ln -sf $shell /bin/sh
-test/suite
+./test/suite
 EOF
     } | tee $outfile
     echo

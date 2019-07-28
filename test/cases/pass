@@ -1,50 +1,53 @@
 #!/usr/bin/env sh
 
-test_exit_pass () {
+test_pass_exit () {
   exit
 }
 
-test_return_pass () {
+test_pass_return () {
   return
 }
 
-test_expect_status_true_pass () {
+test_pass_true () {
+  true
+}
+
+test_pass_expect_status_true () {
   t_expect_status true 0
 }
 
-test_expect_status_false_pass () {
+test_pass_expect_status_false () {
   t_expect_status false 1
 }
 
-test_expect_output_pass () {
+test_pass_expect_output () {
   t_expect_output 'echo "hello world"' "hello world"
 }
 
-test_expect_output_multiline_pass () {
+test_pass_expect_output_multiline () {
   t_expect_output 'for i in hello world; do echo $i; done' "\
 hello
 world"
 }
 
-test_expect_value_pass () {
+test_pass_expect_value () {
   t_expect_value 1 1
 }
 
-test_expect_value_char_pass () {
+test_pass_expect_value_char () {
   local a="x"
   t_expect_value '$a' x
 }
 
-test_expect_value_number_pass () {
+test_pass_expect_value_number () {
   local a=0
   t_expect_value '$a' 0
 }
 
-test_multiple_expects_pass () {
+test_pass_multiple_expects () {
   t_expect_status true 0
   t_expect_output "echo 0" "0"
   t_expect_value  0 0
 }
 
-. test/helper
 . test-again

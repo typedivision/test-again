@@ -1,0 +1,70 @@
+#!/usr/bin/env sh
+TESTDIR=$(cd "$(dirname $0)" && pwd)
+BASEDIR=$TESTDIR/..
+
+PATH=$PATH:$BASEDIR/bin
+CASES=$TESTDIR/cases
+
+call_test () {
+  _t_SUB_INDENT=""
+  t_call -errout $CASES/subtests $t_TEST_NAME
+  t_expect_value '$t_CALL_STATUS' $1
+  t_expect_value '$t_CALL_OUTPUT' "$2"
+}
+
+test_subtest_pass () {
+  call_test 0 "\
+1..1
+    1..1
+    ok 1 test_pass
+ok 1 test_subtest_pass"
+}
+
+test_subtest_fail () {
+  call_test 1 "\
+1..1
+    1..4
+    # A
+    ok 1 test_a
+    # B
+    ok 2 test_b
+    # C
+    not ok 3 test_c
+    ok 4 test_s # skip s
+not ok 1 test_subtest_fail"
+}
+
+test_subtest_pass_fail () {
+  call_test 1 "\
+1..1
+    1..4
+    # A
+    ok 1 test_a
+    # B
+    ok 2 test_b
+    # C
+    not ok 3 test_c
+    ok 4 test_s # skip s
+not ok 1 test_subtest_pass_fail"
+}
+
+test_subsubtest () {
+  call_test 1 "\
+1..1
+    1..2
+        1..1
+        ok 1 test_pass
+    ok 1 test_subtest_pass
+        1..4
+        # A
+        ok 1 test_a
+        # B
+        ok 2 test_b
+        # C
+        not ok 3 test_c
+        ok 4 test_s # skip s
+    not ok 2 test_subtest_fail
+not ok 1 test_subsubtest"
+}
+
+. test-again

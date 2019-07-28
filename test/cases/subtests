@@ -6,7 +6,15 @@ test_subtest_pass () {
 }
 
 test_subtest_fail () {
-  t_subtest "$TESTDIR/abc"
+  t_subtest $TESTDIR/abc
+}
+
+test_subtest_pass_fail () {
+  t_subtest $TESTDIR/abc
+}
+
+test_subsubtest () {
+  t_subtest $TESTDIR/subsubtest
 }
 
 . test-again

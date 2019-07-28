@@ -1,43 +1,11 @@
 #!/usr/bin/env sh
 
-create () {
-  {
-    echo "#!/usr/bin/env sh"
-    cat
-    echo ". bin/test-again"
-  } > $t_TEST_TMP/$1
-  chmod +x $t_TEST_TMP/$1
-}
-
-call_test () {
-  t_call env -i $t_TEST_TMP/$1 test
-  t_expect_value '$t_CALL_STATUS' 0
-  t_expect_value '$t_CALL_OUTPUT' "$2"
-}
-
-test_skip_without_reason () {
-  local script=${t_TEST_NAME#*_}
-  create $script <<EOF
-test () {
+test_skip () {
   t_skip
 }
-EOF
-  call_test $script "\
-1..1
-ok 1 test # skip"
-}
 
-test_skip_with_reason () {
-  local script=${t_TEST_NAME#*_}
-  create $script <<EOF
-test () {
+test_skip_reason () {
   t_skip "Skipping..."
 }
-EOF
-  call_test $script "\
-1..1
-ok 1 test # skip Skipping..."
-}
 
-. test/helper
 . test-again

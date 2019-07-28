@@ -1,8 +1,7 @@
 #!/usr/bin/env sh
 
 test_not_run () {
-false
+  false
 }
 
-. test/helper
 . test-again

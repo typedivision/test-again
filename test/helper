@@ -1,9 +1,0 @@
-#!/usr/bin/env sh
-
-if [ -e bin/test-again ]
-then
-  export PATH="$PWD/bin:$PATH"
-else
-  printf "Tests must be run from ts project root\n"
-  exit 1
-fi

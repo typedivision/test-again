@@ -1,0 +1,27 @@
+#!/usr/bin/env sh
+TESTDIR=$(cd "$(dirname $0)" && pwd)
+BASEDIR=$TESTDIR/..
+
+PATH=$PATH:$BASEDIR/bin
+CASES=$TESTDIR/cases
+
+call_test () {
+  _t_SUB_INDENT=""
+  t_call -errout $CASES/skip $t_TEST_NAME
+  t_expect_value '$t_CALL_STATUS' 0
+  t_expect_value '$t_CALL_OUTPUT' "$1"
+}
+
+test_skip () {
+  call_test "\
+1..1
+ok 1 test_skip # skip"
+}
+
+test_skip_reason () {
+  call_test "\
+1..1
+ok 1 test_skip_reason # skip Skipping..."
+}
+
+. test-again

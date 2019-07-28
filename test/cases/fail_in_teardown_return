@@ -13,15 +13,11 @@ t_teardown_once () {
 }
 
 t_teardown () {
-  >&2 echo "in teardown"
+  return 1
 }
 
-test_pass_a () {
-  >&2 echo "in test a"
-}
-
-test_pass_b () {
-  >&2 echo "in test b"
+test_fail_in_teardown () {
+  >&2 echo "in test"
 }
 
 . test-again

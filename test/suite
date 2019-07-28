@@ -1,28 +1,29 @@
 #!/usr/bin/env sh
-. test/helper
+CMDPATH=$(cd "$(dirname $0)" && pwd)
+BASEDIR=$CMDPATH/..
+
+PATH=$PATH:$BASEDIR/bin
+CASES=$CMDPATH/cases
 
 #
-# test-again test
+# test-again script tests
 #
 
 test_ta_runs_script () {
-  t_expect_output "test/cases/ok" "\
+  t_expect_output "$CASES/ok" "\
 1..1
 ok 1 test_pass"
 }
 
 test_ta_runs_script_in_pwd () {
-  sed -e '/helper/d' test/cases/ok > "$t_TEST_TMP/pass"
-  chmod +x "$t_TEST_TMP/pass"
-
-  cd "$t_TEST_TMP"
-  t_expect_output "test-again pass" "\
+  cd "$CASES"
+  t_expect_output "./ok" "\
 1..1
 ok 1 test_pass"
 }
 
 test_ta_runs_multiple_scripts () {
-  t_expect_output "test-again test/cases/ok test/cases/not_ok" "\
+  t_expect_output "test-again $CASES/ok $CASES/not_ok" "\
 1..1
 ok 1 test_pass
 1..1
@@ -30,7 +31,7 @@ not ok 1 test_fail"
 }
 
 test_ta_runs_tests_with_same_name_in_different_scripts () {
-  t_expect_output "test-again test/cases/xyz_one test/cases/xyz_two" "\
+  t_expect_output "test-again $CASES/xyz_one $CASES/xyz_two" "\
 1..1
 ok 1 test_xyz
 1..1
@@ -38,18 +39,18 @@ not ok 1 test_xyz"
 }
 
 test_ta_reports_non_executable_scripts () {
-  t_expect_output "test-again test/cases/nox" \
-    "error! test/cases/nox not executable"
+  t_expect_output "test-again $CASES/nox" \
+    "error! $CASES/nox not executable"
 }
 
 test_ta_reports_non_files () {
- t_expect_output "test-again test test/miss" "\
-error! test not a file
-error! test/miss not a file"
+ t_expect_output "test-again miss tests/miss" "\
+error! miss not a file
+error! tests/miss not a file"
 }
 
 test_script_runs_tests () {
-  t_expect_output "test/cases/abc" "\
+  t_expect_output "$CASES/abc" "\
 1..4
 ok 1 test_a
 ok 2 test_b
@@ -58,216 +59,217 @@ ok 4 test_s # skip s" 2>/dev/null
 }
 
 test_script_runs_named_tests () {
-  t_expect_output "test/cases/abc test_a test_c" "\
+  t_expect_output "$CASES/abc test_a test_c" "\
 1..2
 ok 1 test_a
 not ok 2 test_c" 2>/dev/null
 }
 
 test_script_runs_tests_matching_patterns () {
-  t_expect_output 'test/cases/abc test_[ac]' "\
+  t_expect_output '$CASES/abc test_[ac]' "\
 1..2
 ok 1 test_a
 not ok 2 test_c" 2>/dev/null
 }
 
+test_functions () {
+  t_subtest $CASES/functions
+}
+
+test_changed_working_dirs () {
+  t_subtest $CASES/change_dirs
+}
+
 #
-# options test
+# test-again options tests
 #
 
 test_ta_opt_h_prints_help () {
-  t_expect_status 'test-again -h | grep -q "usage:"' 0
+  t_expect_status "test-again -h | grep -q 'usage:'" 0
 }
 
 test_script_opt_h_prints_help () {
-  t_expect_status 'test/cases/ok -h | grep -q "usage:"' 0
+  t_expect_status "$CASES/ok -h | grep -q 'usage:'" 0
 }
 
 test_ta_opt_l_lists_tests () {
-  t_expect_output "test-again -l test/cases/abc" "\
-[test/cases/abc:3] test_a
-[test/cases/abc:9] test_b
-[test/cases/abc:15] test_c
-[test/cases/abc:21] test_s"
+  t_expect_output "test-again -l $CASES/abc" "\
+[$CASES/abc:3] test_a
+[$CASES/abc:9] test_b
+[$CASES/abc:15] test_c
+[$CASES/abc:21] test_s"
 }
 
 test_script_opt_l_lists_tests () {
-  t_expect_output "test/cases/abc -l" "\
-[test/cases/abc:3] test_a
-[test/cases/abc:9] test_b
-[test/cases/abc:15] test_c
-[test/cases/abc:21] test_s"
+  t_expect_output "$CASES/abc -l" "\
+[$CASES/abc:3] test_a
+[$CASES/abc:9] test_b
+[$CASES/abc:15] test_c
+[$CASES/abc:21] test_s"
 }
 
 test_script_opt_default_prints_test_stderr () {
-  t_expect_output "test/cases/abc test_a 2>&1" "\
+  t_expect_output "$CASES/abc test_a 2>&1" "\
 1..1
 # A
 ok 1 test_a"
 }
 
 test_script_opt_v_prints_test_description_and_stdout () {
-  t_expect_output "test/cases/abc -v test_a 2>&1" "\
+  t_expect_output "$CASES/abc -v test_a 2>&1" "\
 1..1
-# test_a [test/cases/abc:3]
+# test_a [$CASES/abc:3]
 # a
 # A
 ok 1 test_a"
 }
 
 test_script_opt_v_prints_result_on_stdout () {
-  t_expect_output "test/cases/abc -v test_a 2>/dev/null" "\
+  t_expect_output "$CASES/abc -v test_a 2>/dev/null" "\
 1..1
 ok 1 test_a"
 }
 
 test_script_opt_v_prints_comments_on_stderr () {
-  t_expect_output "test/cases/abc -v test_a 2>&1 1>/dev/null" "\
-# test_a [test/cases/abc:3]
+  t_expect_output "$CASES/abc -v test_a 2>&1 1>/dev/null" "\
+# test_a [$CASES/abc:3]
 # a
 # A"
 }
 
 test_script_opt_d_prints_trace_logs () {
-  local loglines=$(test/cases/ok -d 2>&1 | wc -l | xargs)
+  local loglines=$($CASES/ok -d 2>&1 | wc -l | xargs)
   t_expect_status "test $loglines -eq 18" 0
 }
 
 test_script_opt_dv_is_the_same_as_d () {
-  local loglines=$(test/cases/ok -dv 2>&1 | wc -l | xargs)
+  local loglines=$($CASES/ok -dv 2>&1 | wc -l | xargs)
   t_expect_status "test $loglines -eq 18" 0
 }
 
 test_script_opt_default_deletes_tmpdir () {
   rm -rf $_t_TMP_DIR/ok_*
-  test/cases/ok
+  $CASES/ok
   t_expect_status "test $(ls $_t_TMP_DIR/ok_* 2>/dev/null)" 1
 }
 
 test_script_opt_k_keeps_tmpdir () {
   rm -rf $_t_TMP_DIR/ok_*
-  test/cases/ok -k
+  $CASES/ok -k
   t_expect_status "test $(ls $_t_TMP_DIR/ok_*)" 0
   rm -rf $_t_TMP_DIR/ok_*
 }
 
 test_script_opt_t_sets_tmpdir () {
-  test/cases/ok -k -t "temp"
+  $CASES/ok -k -t "temp"
   t_expect_status "test $(ls $PWD/temp/ok_*)" 0
   rm -rf "$PWD/temp"
 }
 
 #
-# properties test
+# test-again properties tests
 #
 
 test_properties_are_available () {
-  t_expect_value '$t_TEST_FILE' "test/suite"
+  t_expect_value '$t_TEST_FILE' "$0"
   t_expect_value '$t_TEST_NAME' "test_properties_are_available"
-  t_expect_value '$t_TEST_NUM' 23
+  t_expect_value '$t_TEST_NUM' 25
   t_expect_value '$t_BASE_DIR' "$PWD"
   t_expect_value '$t_BASE_TMP' "$PWD/tmp/suite_$$"
   t_expect_value '$t_TEST_TMP' "$PWD/tmp/suite_$$/test_properties_are_available"
 }
 
 #
-# exit status test
+# test-again exit status tests
 #
 
-test_ta_exits_1_for_non_executable_scripts () {
-  t_expect_status "test-again test/nox" 1
+test_ta_returns_1_for_non_executable_scripts () {
+  t_expect_status "test-again $CASES/nox" 1
 }
 
-test_ta_exits_1_for_non_files () {
-  t_expect_status "test-again test test/miss" 1
+test_ta_returns_1_for_non_files () {
+  t_expect_status "test-again miss tests/miss" 1
 }
 
-test_ta_exits_0_for_passing_test () {
-  t_expect_status "test-again test/cases/ok" 0
+test_ta_returns_0_for_passing_test () {
+  t_expect_status "test-again $CASES/ok" 0
 }
 
-test_ta_exits_1_for_failing_test () {
-  t_expect_status "test-again test/cases/ok" 0
+test_ta_returns_1_for_failing_test () {
+  t_expect_status "test-again $CASES/ok" 0
 }
 
-test_script_exits_0_for_passing_test () {
-  t_expect_status "test/cases/ok" 0
+test_script_returns_0_for_passing_test () {
+  t_expect_status "$CASES/ok" 0
 }
 
-test_script_exits_1_for_failing_test () {
-  t_expect_status "test/cases/not_ok" 1
-}
-
-#
-# testcases
-#
-
-test_case_test_detection () {
-  t_subtest test/cases/test_detection
-}
-
-test_case_changed_working_dirs () {
-  t_subtest test/cases/change_dirs
-}
-
-test_case_pass () {
-  t_subtest test/cases/pass
-}
-
-test_case_pass_in_steps () {
-  t_subtest test/cases/pass_in_steps
-}
-
-test_case_fail () {
-  t_subtest test/cases/fail
-}
-
-test_case_fail_in_setup_once () {
-  t_subtest test/cases/fail_in_setup_once
-}
-
-test_case_fail_in_setup () {
-  t_subtest test/cases/fail_in_setup
-}
-
-test_case_fail_in_test () {
-  t_subtest test/cases/fail_in_test
-}
-
-test_case_fail_in_teardown_once () {
-  t_subtest test/cases/fail_in_teardown_once
-}
-
-test_case_fail_in_teardown () {
-  t_subtest test/cases/fail_in_teardown
-}
-
-test_case_skip () {
-  t_subtest test/cases/skip
-}
-
-test_case_bailout () {
-  t_subtest test/cases/bailout
-}
-
-test_case_call () {
-  t_subtest test/cases/call
-}
-
-test_case_subtest () {
-  t_subtest test/cases/subtest
-}
-
-test_case_subtest () {
-  t_subtest test/cases/subtest
-}
-
-test_case_bdd_messages () {
-  t_subtest test/cases/bdd
+test_script_returns_1_for_failing_test () {
+  t_expect_status "$CASES/not_ok" 1
 }
 
 #
-# misc tests
+# test-again workflow tests
+#
+
+test_pass () {
+  t_subtest $CASES/pass
+}
+
+test_pass_in_steps () {
+  t_call -errout "$CASES/pass_in_steps"
+  t_expect_value '$t_CALL_STATUS' 0
+  t_expect_value '$t_CALL_OUTPUT' "\
+1..2
+# in setup once
+# in setup
+# in test a
+# in teardown
+ok 1 test_pass_a
+# in setup
+# in test b
+# in teardown
+ok 2 test_pass_b
+# in teardown once"
+}
+
+test_fail () {
+  t_subtest "$CMDPATH/test_fail"
+}
+
+test_fail_in_steps () {
+  t_subtest "$CMDPATH/test_fail_in_steps"
+}
+
+test_skip () {
+  t_subtest "$CMDPATH/test_skip"
+}
+
+test_bailout () {
+  t_subtest "$CMDPATH/test_bailout"
+}
+
+test_call () {
+  t_subtest "$CMDPATH/test_call"
+}
+
+test_subtests () {
+  t_subtest "$CMDPATH/test_subtests"
+}
+
+test_bdd_messages () {
+  t_call -errout env $CASES/bdd
+  t_expect_value '$t_CALL_STATUS' 0
+  t_expect_value '$t_CALL_OUTPUT' "\
+1..1
+# GIVEN a strig
+# AND   a number
+# WHEN  calling printf
+# THEN  the result is the concatinated string
+ok 1 test_bdd"
+}
+
+#
+# test-again misc tests
 #
 
 test_ta_prevents_hang_by_stdin () {
@@ -281,4 +283,4 @@ test_ta_allows_exit_trap () {
   exit 1
 }
 
-. bin/test-again
+. test-again

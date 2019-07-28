@@ -1,0 +1,133 @@
+#!/usr/bin/env sh
+TESTDIR=$(cd "$(dirname $0)" && pwd)
+BASEDIR=$TESTDIR/..
+
+PATH=$PATH:$BASEDIR/bin
+CASES=$TESTDIR/cases
+
+call_test () {
+  _t_SUB_INDENT=""
+  t_call -errout $CASES/fail $t_TEST_NAME
+  t_expect_value '$t_CALL_STATUS' 1
+  t_expect_value '$t_CALL_OUTPUT' "$1"
+}
+
+test_fail_exit () {
+  call_test "\
+1..1
+not ok 1 $t_TEST_NAME"
+}
+
+test_fail_return () {
+  call_test "\
+1..1
+not ok 1 $t_TEST_NAME"
+}
+
+test_fail_trap () {
+  call_test "\
+1..1
+not ok 1 $t_TEST_NAME"
+}
+
+test_fail_expect_status_true () {
+  call_test "\
+1..1
+# expect_status failed
+#   true
+#  actual   0
+#  expected 1
+not ok 1 $t_TEST_NAME"
+}
+
+test_fail_expect_status_false () {
+  call_test "\
+1..1
+# expect_status failed
+#   false
+#  actual   1
+#  expected 0
+not ok 1 $t_TEST_NAME"
+}
+
+test_fail_expect_output () {
+  call_test \
+'1..1
+# expect_output failed
+#   echo "hello world"
+#  actual
+#   hello world
+#  expected
+#   hell0 world
+not ok 1 '$t_TEST_NAME
+}
+
+test_fail_expect_output_multiline () {
+  call_test \
+'1..1
+# expect_output failed
+#   for i in hello world; do echo $i; done
+#  actual
+#   hello
+#   world
+#  expected
+#   hell0
+#   world
+not ok 1 '$t_TEST_NAME
+}
+
+test_fail_expect_value () {
+  call_test "\
+1..1
+# expect_value failed
+#   1
+#  expected
+#   2
+not ok 1 $t_TEST_NAME"
+}
+
+test_fail_expect_value_char () {
+  call_test \
+'1..1
+# expect_value failed
+#   $a
+#  actual
+#   x
+#  expected
+#   X
+not ok 1 '$t_TEST_NAME
+}
+
+test_fail_expect_value_number () {
+  call_test \
+'1..1
+# expect_value failed
+#   $a
+#  actual
+#   0
+#  expected
+#   1
+not ok 1 '$t_TEST_NAME
+}
+
+test_multiple_expects_fail_early () {
+  call_test "\
+1..1
+# expect_status failed
+#   true
+#  actual   0
+#  expected 1
+not ok 1 $t_TEST_NAME"
+}
+
+test_multiple_expects_fail_late () {
+  call_test "\
+1..1
+# expect_status failed
+#   true
+#  actual   0
+#  expected 1
+not ok 1 $t_TEST_NAME"
+}
+
+. test-again

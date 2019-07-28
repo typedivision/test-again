@@ -4,5 +4,4 @@ test_fail () {
   false
 }
 
-. test/helper
 . test-again

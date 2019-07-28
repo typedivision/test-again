@@ -4,5 +4,4 @@ test_xyz () {
   true
 }
 
-. test/helper
 . test-again

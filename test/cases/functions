@@ -1,0 +1,27 @@
+#!/usr/bin/env sh
+
+test_functions_common () {
+  true
+}
+
+test_functions_with_whitespace 	 ()  {
+  true
+}
+
+test_functions_without_whitespace() {
+  true
+}
+
+  test_functions_leading_whitespace () {
+  true
+}
+
+test_functions_one_line () { true; }
+
+test_functions_subshell () (
+  true
+)
+
+test_functions_subshell_one_line () ( true )
+
+. test-again

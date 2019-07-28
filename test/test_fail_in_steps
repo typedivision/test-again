@@ -1,0 +1,168 @@
+#!/usr/bin/env sh
+TESTDIR=$(cd "$(dirname $0)" && pwd)
+BASEDIR=$TESTDIR/..
+
+PATH=$PATH:$BASEDIR/bin
+CASES=$TESTDIR/cases
+
+call_test () {
+  _t_SUB_INDENT=""
+  t_call -errout $CASES/${t_TEST_NAME#test_}
+  t_expect_value '$t_CALL_STATUS' 1
+  t_expect_value '$t_CALL_OUTPUT' "$1"
+}
+
+test_fail_in_setup_once_exit () {
+  call_test "\
+1..1
+# in setup once
+error! setup once failed
+# in teardown once"
+}
+
+test_fail_in_setup_once_return () {
+  call_test "\
+1..1
+# in setup once
+error! setup once failed
+# in teardown once"
+}
+
+test_fail_in_setup_once_trap () {
+  call_test "\
+1..1
+# in setup once
+error! setup once failed
+# in teardown once"
+}
+
+test_fail_in_setup_exit () {
+  call_test "\
+1..1
+# in setup once
+# in setup
+# in teardown
+not ok 1 test_fail_in_setup
+# in teardown once"
+}
+
+test_fail_in_setup_return () {
+  call_test "\
+1..1
+# in setup once
+# in setup
+# in teardown
+not ok 1 test_fail_in_setup
+# in teardown once"
+}
+
+test_fail_in_setup_trap () {
+  call_test "\
+1..1
+# in setup once
+# in setup
+# in teardown
+not ok 1 test_fail_in_setup
+# in teardown once"
+}
+
+test_fail_in_test_exit () {
+  call_test "\
+1..1
+# in setup once
+# in setup
+# in test
+# in teardown
+not ok 1 test_fail_in_test
+# in teardown once"
+}
+
+test_fail_in_test_return () {
+  call_test "\
+1..1
+# in setup once
+# in setup
+# in test
+# in teardown
+not ok 1 test_fail_in_test
+# in teardown once"
+}
+
+test_fail_in_test_trap () {
+  call_test "\
+1..1
+# in setup once
+# in setup
+# in test
+# in teardown
+not ok 1 test_fail_in_test
+# in teardown once"
+}
+
+test_fail_in_teardown_exit () {
+  call_test "\
+1..1
+# in setup once
+# in setup
+# in test
+not ok 1 test_fail_in_teardown
+# in teardown once"
+}
+
+test_fail_in_teardown_return () {
+  call_test "\
+1..1
+# in setup once
+# in setup
+# in test
+not ok 1 test_fail_in_teardown
+# in teardown once"
+}
+
+test_fail_in_teardown_trap () {
+  call_test "\
+1..1
+# in setup once
+# in setup
+# in test
+not ok 1 test_fail_in_teardown
+# in teardown once"
+}
+
+test_fail_in_teardown_once_exit () {
+  call_test "\
+1..1
+# in setup once
+# in setup
+# in test
+# in teardown
+ok 1 test_fail_in_teardown_once
+# in teardown once
+error! teardown once failed"
+}
+
+test_fail_in_teardown_once_return () {
+  call_test "\
+1..1
+# in setup once
+# in setup
+# in test
+# in teardown
+ok 1 test_fail_in_teardown_once
+# in teardown once
+error! teardown once failed"
+}
+
+test_fail_in_teardown_once_trap () {
+  call_test "\
+1..1
+# in setup once
+# in setup
+# in test
+# in teardown
+ok 1 test_fail_in_teardown_once
+# in teardown once
+error! teardown once failed"
+}
+
+. test-again

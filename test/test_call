@@ -1,4 +1,8 @@
 #!/usr/bin/env sh
+TESTDIR=$(cd "$(dirname $0)" && pwd)
+BASEDIR=$TESTDIR/..
+
+PATH=$PATH:$BASEDIR/bin
 
 prog_ok () {
   echo "prog ok"
@@ -53,5 +57,4 @@ test_call_cleans_state () {
   t_expect_value '$t_CALL_OUTPUT' ""
 }
 
-. test/helper
 . test-again

@@ -5,7 +5,7 @@ test_before_bailout () {
 }
 
 test_bailout () {
-  t_bailout
+  t_bailout "test aborted"
 }
 
 test_after_bailout () {

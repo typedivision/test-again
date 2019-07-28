@@ -1,0 +1,29 @@
+#!/usr/bin/env sh
+TESTDIR=$(cd "$(dirname $0)" && pwd)
+BASEDIR=$TESTDIR/..
+
+PATH=$PATH:$BASEDIR/bin
+CASES=$TESTDIR/cases
+
+call_test () {
+  _t_SUB_INDENT=""
+  t_call -errout $CASES/${t_TEST_NAME#test_}
+  t_expect_value '$t_CALL_STATUS' 0
+  t_expect_value '$t_CALL_OUTPUT' "$1"
+}
+
+test_bailout () {
+  call_test "\
+1..3
+ok 1 test_before_bailout
+bail out!"
+}
+
+test_bailout_reason () {
+  call_test "\
+1..3
+ok 1 test_before_bailout
+bail out! test aborted"
+}
+
+. test-again

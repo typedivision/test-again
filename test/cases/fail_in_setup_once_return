@@ -2,6 +2,7 @@
 
 t_setup_once () {
   >&2 echo "in setup once"
+  return 1
 }
 
 t_setup () {
@@ -16,12 +17,8 @@ t_teardown () {
   >&2 echo "in teardown"
 }
 
-test_pass_a () {
-  >&2 echo "in test a"
-}
-
-test_pass_b () {
-  >&2 echo "in test b"
+test_fail_in_setup_once () {
+  >&2 echo "in test"
 }
 
 . test-again

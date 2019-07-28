@@ -4,5 +4,4 @@ test_pass () {
   true
 }
 
-. test/helper
 . test-again

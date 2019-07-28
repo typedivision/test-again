@@ -1,13 +1,13 @@
 #!/usr/bin/env sh
 
 test_change_working_dir () {
-  cd "$t_BASE_DIR/bin"
-  t_expect_value '$t_BASE_DIR/bin' "$(pwd)"
+  mkdir "$t_TEST_TMP/dir"
+  cd "$t_TEST_TMP/dir"
+  t_expect_value '$t_TEST_TMP/dir' "$(pwd)"
 }
 
 test_check_working_dir () {
   t_expect_value '$t_BASE_DIR' "$(pwd)"
 }
 
-. test/helper
 . test-again

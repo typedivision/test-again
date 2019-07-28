@@ -1,217 +1,58 @@
 #!/usr/bin/env sh
 
-create () {
-  {
-    echo "#!/usr/bin/env sh"
-    cat
-    echo ". bin/test-again"
-  } > $t_TEST_TMP/$1
-  chmod +x $t_TEST_TMP/$1
-}
-
-call_test () {
-  t_call -errout env -i $t_TEST_TMP/$1 test
-  t_expect_value '$t_CALL_STATUS' 1
-  t_expect_value '$t_CALL_OUTPUT' "$2"
-}
-
-test_exit_fail () {
-  local script=${t_TEST_NAME#*_}
-  create $script <<EOF
-test () {
+test_fail_exit () {
   exit 1
 }
-EOF
-  call_test $script "\
-1..1
-not ok 1 test"
-}
 
-test_return_fail () {
-  local script=${t_TEST_NAME#*_}
-  create $script <<EOF
-test () {
+test_fail_return () {
   return 1
 }
-EOF
-  call_test $script "\
-1..1
-not ok 1 test"
-}
 
-test_trap_fail () {
-  local script=${t_TEST_NAME#*_}
-  create $script <<EOF
-test () {
+test_fail_trap () {
   false
   return 0
 }
-EOF
-  call_test $script "\
-1..1
-not ok 1 test"
-}
 
-test_expect_status_true_fail () {
-  local script=${t_TEST_NAME#*_}
-  create $script <<EOF
-test () {
+test_fail_expect_status_true () {
   t_expect_status true 1
 }
-EOF
-  call_test $script "\
-1..1
-# expect_status failed
-#   true
-#  actual   0
-#  expected 1
-not ok 1 test"
-}
 
-test_expect_status_false_fail () {
-  local script=${t_TEST_NAME#*_}
-  create $script <<EOF
-test () {
+test_fail_expect_status_false () {
   t_expect_status false 0
 }
-EOF
-  call_test $script "\
-1..1
-# expect_status failed
-#   false
-#  actual   1
-#  expected 0
-not ok 1 test"
 
-}
-
-test_expect_output_fail () {
-  local script=${t_TEST_NAME#*_}
-  create $script <<EOF
-test () {
+test_fail_expect_output () {
   t_expect_output 'echo "hello world"' "hell0 world"
 }
-EOF
-  call_test $script \
-'1..1
-# expect_output failed
-#   echo "hello world"
-#  actual
-#   hello world
-#  expected
-#   hell0 world
-not ok 1 test'
-}
 
-test_expect_output_multiline_fail () {
-  local script=${t_TEST_NAME#*_}
-  create $script <<'EOF'
-test () {
+test_fail_expect_output_multiline () {
   t_expect_output 'for i in hello world; do echo $i; done' "\
 hell0
 world"
 }
-EOF
-  call_test $script \
-'1..1
-# expect_output failed
-#   for i in hello world; do echo $i; done
-#  actual
-#   hello
-#   world
-#  expected
-#   hell0
-#   world
-not ok 1 test'
-}
 
-test_expect_value_fail () {
-  local script=${t_TEST_NAME#*_}
-  create $script <<EOF
-test () {
+test_fail_expect_value () {
   t_expect_value 1 2
 }
-EOF
-  call_test $script "\
-1..1
-# expect_value failed
-#   1
-#  expected
-#   2
-not ok 1 test"
-}
 
-test_expect_value_char_fail () {
-  local script=${t_TEST_NAME#*_}
-  create $script <<'EOF'
-test () {
+test_fail_expect_value_char () {
   local a="x"
   t_expect_value '$a' X
 }
-EOF
-  call_test $script \
-'1..1
-# expect_value failed
-#   $a
-#  actual
-#   x
-#  expected
-#   X
-not ok 1 test'
-}
 
-test_expect_value_number_fail () {
-  local script=${t_TEST_NAME#*_}
-  create $script <<'EOF'
-test () {
+test_fail_expect_value_number () {
   local a=0
   t_expect_value '$a' 1
 }
-EOF
-  call_test $script \
-'1..1
-# expect_value failed
-#   $a
-#  actual
-#   0
-#  expected
-#   1
-not ok 1 test'
-}
 
 test_multiple_expects_fail_early () {
-  local script=${t_TEST_NAME#*_}
-  create $script <<EOF
-test () {
   t_expect_status true 1
   t_expect_status true 0
-}
-EOF
-  call_test $script "\
-1..1
-# expect_status failed
-#   true
-#  actual   0
-#  expected 1
-not ok 1 test"
 }
 
 test_multiple_expects_fail_late () {
-  local script=${t_TEST_NAME#*_}
-  create $script <<EOF
-test () {
   t_expect_status true 0
   t_expect_status true 1
 }
-EOF
-  call_test $script "\
-1..1
-# expect_status failed
-#   true
-#  actual   0
-#  expected 1
-not ok 1 test"
-}
 
-. test/helper
 . test-again
