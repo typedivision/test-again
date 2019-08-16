@@ -16,24 +16,27 @@ mkdir -p $TMP
   image=ta_$os
   outfile=$TMP/$image.buildlog
 
-  echo "make $image..."
+  echo "==> make $image..."
   cd $CMDPATH/$os
-  if docker build -t $image . >$outfile 2>&1; then
-    echo "ok"
-  else
-    echo "failed"
+  if ! docker build -t $image . >$outfile 2>&1; then
+    echo "==> failed"
+    cat $outfile
     exit 1
   fi
 
   for shell in $shells; do
     outfile=$TMP/${image}_$(basename $shell)
-    echo "test $image $shell..."
-    {
-      docker run -i --rm -v $BASEDIR:/ta -w /ta $image /bin/bash 2>&1 <<EOF
+    echo "==> test $image $shell..."
+    docker run -i --rm -v $BASEDIR:/ta -w /ta $image /bin/bash 2>&1 <<EOF
 ln -sf $shell /bin/sh
 ./test/suite
 EOF
-    } | tee $outfile
+    if [ $? -eq 0 ]; then
+      echo "==> pass"
+    else
+      echo "==> failed"
+      exit 1
+    fi
     echo
   done
 done

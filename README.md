@@ -3,6 +3,8 @@
 runs shell script functions as tests
 ====================================
 
+[![Build Status](https://travis-ci.org/typedivision/test-again.svg?branch=master)](https://travis-ci.org/typedivision/test-again)<Paste>
+
 **test-again** comes as a shell script to run functions of script files as tests
 for any kind of programs. The test script files can be run individually or in a
 batch format using **test-again** as command.

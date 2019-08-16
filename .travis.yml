@@ -1,0 +1,6 @@
+dist: bionic
+
+language: bash
+
+script:
+  - test/docker/run-suite
