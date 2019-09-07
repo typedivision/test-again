@@ -105,12 +105,13 @@ t_expect_ret <cmd> <return>  # compare command exit code with <return>
 t_expect_out <cmd> <output>  # compare command stdout with <output>
 t_expect_eq '<exp>' <value>  # compare expression result and <value>
 
-t_TEST_FILE                  # the file name of the currently running script
+t_TEST_FILE                  # the name of the currently running test script
 t_TEST_NAME                  # the actual test name (= test function name)
 t_TEST_NUM                   # the actual test number
 t_BASE_DIR                   # the shell working dir when calling the script
-t_BASE_TMP                   # a temparary test base dir under <tmp-dir>
-t_TEST_TMP                   # a temparary test dir under t_BASE_DIR
+t_TEST_DIR                   # the directory containing this test script
+t_BASE_TMP                   # a temparary dir for this test script under <tmp-dir>
+t_TEST_TMP                   # a temparary dir for this test under t_BASE_TMP
 ```
 
 ## development

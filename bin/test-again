@@ -134,6 +134,7 @@ _t_run_step_once () {
 
 # Runs a test script or selected tests from it, when given as option.
 _t_run_test_steps () {
+  local test_dir=$(cd "$(dirname $0)" && pwd)
   local test_file="$0"
   local test_case="${test_file##*/}"
   test_case="${test_case%\.*}"
@@ -182,6 +183,7 @@ _t_run_test_steps () {
     export t_TEST_NAME=$test_name
     export t_TEST_NUM=$test_cnt
     export t_BASE_DIR="$_t_TOP_DIR"
+    export t_TEST_DIR="$test_dir"
     export t_BASE_TMP="$case_dir"
     # shellcheck disable=SC2030
     export t_TEST_TMP="$case_dir/$test_name"

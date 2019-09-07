@@ -175,6 +175,8 @@ test_properties_are_available () {
   t_expect_eq '$t_TEST_NAME' "test_properties_are_available"
   t_expect_eq '$t_TEST_NUM' 25
   t_expect_eq '$t_BASE_DIR' "$PWD"
+  local script_dir=$(cd "$(dirname $0)" && pwd)
+  t_expect_eq '$t_TEST_DIR' "$script_dir"
   t_expect_eq '$t_BASE_TMP' "$PWD/tmp/suite_$$"
   t_expect_eq '$t_TEST_TMP' "$PWD/tmp/suite_$$/test_properties_are_available"
 }
